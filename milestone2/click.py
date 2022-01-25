@@ -45,7 +45,7 @@ class Interaction:
             x, y,
             fill="darkblue",
             font="Times 20 italic bold",
-            text=txt, tags='velovity')
+            text=txt, tags='velocity')
 
     def interact(self, event):
         myCanvas.delete('all')
