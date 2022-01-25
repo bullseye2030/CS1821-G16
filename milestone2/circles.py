@@ -43,6 +43,12 @@ class Ball:
         self.pos.add(self.velo)
         self.radius = self.radius - 1 if self.radius > 1 else self.radius   #decrement radius if its positive
 
+def isInvalid (ball):
+    coords = ball.pos.get_p()
+    if coords[0] < 0 or coords[0] > WIDTH or coords[1] < 0 or coords[1] > HEIGHT or ball.radius <= 1:
+        return True
+    else:
+        return False
 
 def draw(canvas):
     global draw_objs
@@ -55,9 +61,13 @@ def draw(canvas):
         timer = 1           #so reset the timer
 
     for item in draw_objs:  # list of items to animate
+
         try:  # wrap in try block just in case any item doesn't have either function
+
             item.draw(canvas)
             item.update()
+            if isInvalid(item):
+                del item
         except:  # continue to next item if either method failed
             pass
     timer += 1      #increment the timer
