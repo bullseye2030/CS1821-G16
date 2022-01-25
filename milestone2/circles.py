@@ -6,13 +6,14 @@ except ImportError:
 import random
 import vector
 
-#constants
+# constants
 WIDTH = 200
 HEIGHT = 200
 
-#global variables
-draw_objs = []  #list of items to animate
-timer = 1   #acts as a timer for animation
+# global variables
+draw_objs = []  # list of items to animate
+timer = 1  # acts as a timer for animation
+
 
 def randCol():
     r = random.randrange(0, 256)
@@ -24,10 +25,11 @@ def randCol():
 def createBall():
     pos = vector.Vector(WIDTH // 2, HEIGHT // 2)  # position is centre of the screen
     velo = vector.Vector(random.randint(-5, 5), random.randint(-5, 5))  # initialise velocity to random
-    radius = random.randint(10,50)
+    radius = random.randint(10, 50)
     colour = randCol()
-    ball = Ball(pos,velo, radius, colour)
+    ball = Ball(pos, velo, radius, colour)
     return ball
+
 
 class Ball:
     def __init__(self, pos, velo, radius, colour):
@@ -39,28 +41,43 @@ class Ball:
     def draw(self, canvas):
         canvas.draw_circle(self.pos.get_p(), self.radius, 3, self.colour)
 
+    def checkOutOfBound(self):
+        x = self.pos.get_p()[0]
+        y = self.pos.get_p()[1]
+        if (x < 0-self.radius or x > WIDTH+self.radius) and (y < 0-self.radius or y > HEIGHT+self.radius):
+            return True
+        return False
+
     def update(self):
         self.pos.add(self.velo)
-        self.radius = self.radius - 1 if self.radius > 1 else self.radius   #decrement radius if its positive
+        self.radius = self.radius - 1 if self.radius > 1 else self.radius  # decrement radius if its positive
+
+    def remove(self):
+        del self
 
 
 def draw(canvas):
     global draw_objs
     global timer
-    if timer % 6 == 0:      #every 1/10 of a second...
-        new_ball = createBall()     #create a new ball
-        draw_objs.append(new_ball)      #and add it to the list of items to be animated
+    if timer % 6 == 0:  # every 1/10 of a second...
+        new_ball = createBall()  # create a new ball
+        draw_objs.append(new_ball)  # and add it to the list of items to be animated
 
-    if timer > 60 == 0:         #if the timer is at 61 then a second has passed
-        timer = 1           #so reset the timer
+    if timer > 60 == 0:  # if the timer is at 61 then a second has passed
+        timer = 1  # so reset the timer
 
     for item in draw_objs:  # list of items to animate
         try:  # wrap in try block just in case any item doesn't have either function
             item.draw(canvas)
             item.update()
+            for ball in draw_objs:
+                if ball.checkOutOfBound():
+                    ball.remove()
+                    # print("Ball Removed")
         except:  # continue to next item if either method failed
             pass
-    timer += 1      #increment the timer
+    timer += 1  # increment the timer
+
 
 frame = simplegui.create_frame("Points", WIDTH, HEIGHT)
 frame.set_draw_handler(draw)
