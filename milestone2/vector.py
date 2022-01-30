@@ -23,7 +23,7 @@ class Vector:
 
     # Returns a tuple with the point corresponding to the vector
     def get_p(self):
-        return (self.x, self.y)
+        return self.x, self.y
 
     # Returns a copy of the vector
     def copy(self):
