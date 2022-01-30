@@ -7,10 +7,8 @@ from vector import *
 
 # Some constants
 CANVAS_DIMS = (600, 400)
-
 IMG = simplegui.load_image('http://www.cs.rhul.ac.uk/courses/CS1830/sprites/coach_wheel-512.png')
-
-STEP = 0.05
+PI = 3.14
 
 
 class Keyboard:
@@ -50,15 +48,19 @@ class Wheel:
         self.img = img
         self.dims = (img.get_width(), img.get_height())
         self.radius = radius
+        self.rot = 0    #rotation
+        self.ang_velo = 0   #angular velocity
 
     def draw(self, canvas):
         canvas.draw_image(self.img, (self.dims[0]/2, self.dims[1]/2),
                           self.dims, self.pos.get_p(),
-                          (self.dims[0]*self.radius, self.dims[1]*self.radius))
+                          (self.dims[0]*self.radius, self.dims[1]*self.radius),
+                          self.rot)
 
     def update(self):
         self.pos.add(self.vel)
-
+        self.ang_velo = (self.vel.get_p()[0] * self.radius) / PI
+        self.rot += self.ang_velo
 
 kbd = Keyboard()
 wheel = Wheel(IMG, Vector(CANVAS_DIMS[0]/2, CANVAS_DIMS[1]/2)) ##
