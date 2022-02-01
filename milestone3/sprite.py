@@ -42,9 +42,11 @@ class Interaction:
     def update(self):
         global MAX_HEIGHT
         if self.keyboard.right:
-            self.wheel.vel.add(Vector(1, 0))
+            if wheel.on_ground():
+                self.wheel.vel.add(Vector(1, 0))
         if self.keyboard.left:
-            self.wheel.vel.add(Vector(-1, 0))
+            if wheel.on_ground():
+                self.wheel.vel.add(Vector(-1, 0))
         if self.keyboard.space:
             if MAX_HEIGHT > 0:
                 self.wheel.vel.add(Vector(0, -MAX_HEIGHT))
@@ -80,7 +82,7 @@ class Wheel:
         self.rot += self.ang_velo
 
     def on_ground(self):
-        if self.pos[1] == 0:
+        if self.pos.get_p()[1] == 0:
             return True
         return False
 
