@@ -9,24 +9,29 @@ from milestone2.vector import *
 CANVAS_DIMS = (600, 400)
 IMG = simplegui.load_image('http://www.cs.rhul.ac.uk/courses/CS1830/sprites/coach_wheel-512.png')
 PI = 3.14
-
+MAX_HEIGHT = 1.0
 
 class Keyboard:
     def __init__(self):
         self.left = False
         self.right = False
+        self.space = False
 
     def keyDown(self, key):
         if key == simplegui.KEY_MAP['left']:
             self.left = True
         elif key == simplegui.KEY_MAP['right']:
             self.right = True
+        elif key == simplegui.KEY_MAP['space']:
+            self.space = False
 
     def keyUp(self, key):
         if key == simplegui.KEY_MAP['left']:
             self.left = False
         elif key == simplegui.KEY_MAP['right']:
             self.right = False
+        elif key == simplegui.KEY_MAP['space']:
+            self.space = False
 
 
 class Interaction:
@@ -35,11 +40,17 @@ class Interaction:
         self.keyboard = keyboard
 
     def update(self):
+        global MAX_HEIGHT
         if self.keyboard.right:
             self.wheel.vel.add(Vector(1, 0))
         if self.keyboard.left:
             self.wheel.vel.add(Vector(-1, 0))
-
+        if self.keyboard.space:
+            self.wheel.vel.add(Vector(0, MAX_HEIGHT))
+            if MAX_HEIGHT > 0:
+                MAX_HEIGHT -= 0.1
+        if not self.keyboard.space:
+            MAX_HEIGHT = 1.0
 
 class Wheel:
     def __init__(self, img, pos, radius = 0.1):
