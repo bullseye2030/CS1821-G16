@@ -51,11 +51,11 @@ class Interaction:
                 MAX_HEIGHT -= 0.1
         if not self.keyboard.space:
             if MAX_HEIGHT < 1:
-                if self.wheel.pos[1] > 0:
+                if self.wheel.pos.get_p()[1] > 0:
                     self.wheel.vel.add(Vector(0, MAX_HEIGHT))
                     MAX_HEIGHT += 0.1
                 else:
-                    self.wheel.pos[1] = 0
+                    self.wheel.pos.y = 0
 
 
 class Wheel:
