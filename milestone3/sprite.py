@@ -51,8 +51,12 @@ class Interaction:
                 MAX_HEIGHT -= 0.1
         if not self.keyboard.space:
             if MAX_HEIGHT < 1:
-                self.wheel.vel.add(Vector(0, MAX_HEIGHT))
-                MAX_HEIGHT += 0.1
+                if self.wheel.pos[1] > 0:
+                    self.wheel.vel.add(Vector(0, MAX_HEIGHT))
+                    MAX_HEIGHT += 0.1
+                else:
+                    self.wheel.pos[1] = 0
+
 
 class Wheel:
     def __init__(self, img, pos, radius = 0.1):
@@ -74,6 +78,11 @@ class Wheel:
         self.pos.add(self.vel)
         self.ang_velo = (self.vel.get_p()[0] * self.radius) / PI
         self.rot += self.ang_velo
+
+    def on_ground(self):
+        if self.pos[1] == 0:
+            return True
+        return False
 
 kbd = Keyboard()
 wheel = Wheel(IMG, Vector(CANVAS_DIMS[0]/2, CANVAS_DIMS[1]/2))
