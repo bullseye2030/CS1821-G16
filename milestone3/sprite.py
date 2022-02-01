@@ -23,7 +23,7 @@ class Keyboard:
         elif key == simplegui.KEY_MAP['right']:
             self.right = True
         elif key == simplegui.KEY_MAP['space']:
-            self.space = False
+            self.space = True
 
     def keyUp(self, key):
         if key == simplegui.KEY_MAP['left']:
@@ -46,11 +46,13 @@ class Interaction:
         if self.keyboard.left:
             self.wheel.vel.add(Vector(-1, 0))
         if self.keyboard.space:
-            self.wheel.vel.add(Vector(0, MAX_HEIGHT))
             if MAX_HEIGHT > 0:
+                self.wheel.vel.add(Vector(0, -MAX_HEIGHT))
                 MAX_HEIGHT -= 0.1
         if not self.keyboard.space:
-            MAX_HEIGHT = 1.0
+            if MAX_HEIGHT < 1:
+                self.wheel.vel.add(Vector(0, MAX_HEIGHT))
+                MAX_HEIGHT += 0.1
 
 class Wheel:
     def __init__(self, img, pos, radius = 0.1):
