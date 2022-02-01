@@ -9,7 +9,8 @@ from milestone2.vector import *
 CANVAS_DIMS = (600, 400)
 IMG = simplegui.load_image('http://www.cs.rhul.ac.uk/courses/CS1830/sprites/coach_wheel-512.png')
 PI = 3.14
-MAX_HEIGHT = 1.0
+MAX_HEIGHT = 3.0
+
 
 class Keyboard:
     def __init__(self):
@@ -41,39 +42,39 @@ class Interaction:
 
     def update(self):
         global MAX_HEIGHT
-        if self.keyboard.right:
-            if wheel.on_ground():
+        if self.keyboard.right and self.wheel.on_ground():
                 self.wheel.vel.add(Vector(1, 0))
-        if self.keyboard.left:
-            if wheel.on_ground():
+        if self.keyboard.left and self.wheel.on_ground():
                 self.wheel.vel.add(Vector(-1, 0))
         if self.keyboard.space:
+            if self.wheel.on_ground():
+                MAX_HEIGHT = 3.0
+            self.wheel.vel.add(Vector(0, -MAX_HEIGHT))
             if MAX_HEIGHT > 0:
-                self.wheel.vel.add(Vector(0, -MAX_HEIGHT))
                 MAX_HEIGHT -= 0.1
         if not self.keyboard.space:
-            if MAX_HEIGHT < 1:
-                if self.wheel.pos.get_p()[1] > 0:
-                    self.wheel.vel.add(Vector(0, MAX_HEIGHT))
-                    MAX_HEIGHT += 0.1
-                else:
-                    self.wheel.pos.y = 0
+            if self.wheel.pos.get_p()[1] < 200.0:
+                self.wheel.vel.add(Vector(0, 2.0))
+            else:
+                self.wheel.pos.y = 200.0
+                self.wheel.vel = Vector()
+
 
 
 class Wheel:
-    def __init__(self, img, pos, radius = 0.1):
+    def __init__(self, img, pos, radius=0.1):
         self.pos = pos
         self.vel = Vector()
         self.img = img
         self.dims = (img.get_width(), img.get_height())
         self.radius = radius
-        self.rot = 0    #rotation
-        self.ang_velo = 0   #angular velocity
+        self.rot = 0  # rotation
+        self.ang_velo = 0  # angular velocity
 
     def draw(self, canvas):
-        canvas.draw_image(self.img, (self.dims[0]/2, self.dims[1]/2),
+        canvas.draw_image(self.img, (self.dims[0] / 2, self.dims[1] / 2),
                           self.dims, self.pos.get_p(),
-                          (self.dims[0]*self.radius, self.dims[1]*self.radius),
+                          (self.dims[0] * self.radius, self.dims[1] * self.radius),
                           self.rot)
 
     def update(self):
@@ -82,12 +83,14 @@ class Wheel:
         self.rot += self.ang_velo
 
     def on_ground(self):
-        if self.pos.get_p()[1] == 0:
+        print(self.pos.get_p())
+        if self.pos.get_p()[1] > 195.0:
             return True
         return False
 
+
 kbd = Keyboard()
-wheel = Wheel(IMG, Vector(CANVAS_DIMS[0]/2, CANVAS_DIMS[1]/2))
+wheel = Wheel(IMG, Vector(CANVAS_DIMS[0] / 2, CANVAS_DIMS[1] / 2))
 inter = Interaction(wheel, kbd)
 
 ITEMS = [wheel, inter]
@@ -112,4 +115,3 @@ frame.set_keyup_handler(kbd.keyUp)
 
 # Start the frame animation
 frame.start()
-
