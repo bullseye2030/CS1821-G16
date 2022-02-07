@@ -3,7 +3,7 @@ try:
 except ImportError:
     import SimpleGUICS2Pygame.simpleguics2pygame as simplegui
 
-from vector import *
+from milestone2.vector import *
 
 # Some constants
 CANVAS_DIMS = (600, 400)
@@ -63,7 +63,7 @@ class Wheel:
         self.rot += self.ang_velo
 
 kbd = Keyboard()
-wheel = Wheel(IMG, Vector(CANVAS_DIMS[0]/2, CANVAS_DIMS[1]/2)) ##
+wheel = Wheel(IMG, Vector(CANVAS_DIMS[0]/2, CANVAS_DIMS[1]/2))
 inter = Interaction(wheel, kbd)
 
 ITEMS = [wheel, inter]
