@@ -21,10 +21,10 @@ class Wall:
         elif self.face == 'r':
             self.edge = CANVAS_WIDTH - self.width
             self.normal = Vector(-1, 0)
-        elif self.face == 'u':
+        elif self.face == 't':
             self.normal = Vector(0, 1)
             self.edge = 0 + self.width
-        elif self.face == 'd':
+        elif self.face == 'b':
             self.normal = Vector(0, -1)
             self.edge = CANVAS_HEIGHT - self.width
         else:
@@ -39,10 +39,10 @@ class Wall:
         elif self.face == 'r':
             start_xy = (CANVAS_WIDTH, 0)
             end_xy = (CANVAS_WIDTH, CANVAS_HEIGHT)
-        elif self.face == 'u':
+        elif self.face == 't':
             start_xy = (0, 0)
             end_xy = (CANVAS_WIDTH, 0)
-        elif self.face == 'd':
+        elif self.face == 'b':
             start_xy = (0, CANVAS_HEIGHT)
             end_xy = (CANVAS_WIDTH, CANVAS_HEIGHT)
         canvas.draw_line(start_xy, end_xy, self.width, self.color)
@@ -52,9 +52,9 @@ class Wall:
             hit = (ball.pos.x - ball.radius <= self.edge)
         elif self.face == "r":
             hit = (ball.pos.x + ball.radius >= self.edge)
-        elif self.face == 'u':
+        elif self.face == 't':
             hit = (ball.pos.y - ball.radius <= self.edge)
-        elif self.face == "d":
+        elif self.face == "b":
             hit = (ball.pos.y + ball.radius >= self.edge)
         else:
             raise Exception("Invalid direction")
@@ -118,13 +118,13 @@ p = Vector(80, 200)
 v = Vector(-1, 1)
 
 # Creating the objects
-b = Ball(p, v, 20, 20, 'blue')
+ball = Ball(p, v, 20, 20, 'blue')
 l = Wall(0, 0, 5, 'red', 'l')
 r = Wall(0, CANVAS_WIDTH, 5, 'red', 'r')
-u = Wall(0, 0, 5, 'red', 'u')
-d = Wall(0, CANVAS_HEIGHT, 5, 'red', 'd')
-walls = [l, r, u, d]
-i = Interaction(walls, b)
+t = Wall(0, 0, 5, 'red', 't')
+b = Wall(0, CANVAS_HEIGHT, 5, 'red', 'b')
+walls = [l, r, t, b]
+i = Interaction(walls, ball)
 
 
 # Create a frame and assign callbacks to event handlers
