@@ -1,3 +1,5 @@
+import random
+
 try:
     import simplegui
 except ImportError:
@@ -10,29 +12,40 @@ class Wall:
     def __init__(self, x, y, width, color, face):
         self.x = x
         self.y = y
-        self.width = width
+        self.width = width * 2 + 1
         self.color = color
         self.face = face
         if self.face == 'l':
             self.normal = Vector(1, 0)
-            self.edge = x - self.width
+            self.edge = 0 + self.width
         elif self.face == 'r':
-            self.edge = x + self.width
+            self.edge = CANVAS_WIDTH - self.width
             self.normal = Vector(-1, 0)
         elif self.face == 'u':
             self.normal = Vector(0, 1)
-            self.edge = y - self.width
+            self.edge = 0 + self.width
         elif self.face == 'd':
             self.normal = Vector(0, -1)
-            self.edge = y + self.width
+            self.edge = CANVAS_HEIGHT - self.width
         else:
             raise Exception("Invalid direction")
 
     def draw(self, canvas):
-        canvas.draw_line((self.x, 0),
-                         (self.x, CANVAS_HEIGHT),
-                         self.width * 2 + 1,
-                         self.color)
+        start_xy = (0, 0)
+        end_xy = (0, 0)
+        if self.face == 'l':
+            start_xy = (0, 0)
+            end_xy = (0, CANVAS_HEIGHT)
+        elif self.face == 'r':
+            start_xy = (CANVAS_WIDTH, 0)
+            end_xy = (CANVAS_WIDTH, CANVAS_HEIGHT)
+        elif self.face == 'u':
+            start_xy = (0, 0)
+            end_xy = (CANVAS_WIDTH, 0)
+        elif self.face == 'd':
+            start_xy = (0, CANVAS_HEIGHT)
+            end_xy = (CANVAS_WIDTH, CANVAS_HEIGHT)
+        canvas.draw_line(start_xy, end_xy, self.width, self.color)
 
     def hit(self, ball) -> bool:
         if self.face == 'l':
@@ -75,23 +88,25 @@ class Ball:
 
 
 class Interaction:
-    def __init__(self, wall, ball):
+    def __init__(self, wall_list, ball):
         self.ball = ball
-        self.wall = wall
+        self.walls = wall_list
 
     def update(self):
-        if self.wall.hit(self.ball):
-            if self.ball.in_collision:
-                self.ball.bounce(self.wall.normal)
+        for wall in self.walls:
+            if wall.hit(self.ball) and not self.ball.in_collision:
                 self.ball.in_collision = True
-            else:
+                if self.ball.in_collision:
+                    self.ball.bounce(wall.normal)
+            if not wall.hit(self.ball) and self.ball.in_collision:
                 self.ball.in_collision = False
-        self.ball.update()
+            self.ball.update()
 
     def draw(self, canvas):
         self.update()
         self.ball.draw(canvas)
-        self.wall.draw(canvas)
+        for wall in self.walls:
+            wall.draw(canvas)
 
 
 # The canvas dimensions
@@ -99,13 +114,18 @@ CANVAS_WIDTH = 600
 CANVAS_HEIGHT = 400
 
 # Initial position and velocity of the ball
-p = Vector(0, 200)
-v = Vector(-1, 0)
+p = Vector(80, 200)
+v = Vector(-1, 1)
 
 # Creating the objects
 b = Ball(p, v, 20, 20, 'blue')
-w = Wall(0, 0, 5, 'red', 'l')
-i = Interaction(w, b)
+l = Wall(0, 0, 5, 'red', 'l')
+r = Wall(0, CANVAS_WIDTH, 5, 'red', 'r')
+u = Wall(0, 0, 5, 'red', 'u')
+d = Wall(0, CANVAS_HEIGHT, 5, 'red', 'd')
+walls = [l, r, u, d]
+i = Interaction(walls, b)
+
 
 # Create a frame and assign callbacks to event handlers
 frame = simplegui.create_frame("ball-wall", CANVAS_WIDTH, CANVAS_HEIGHT)
