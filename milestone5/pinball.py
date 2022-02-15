@@ -157,9 +157,12 @@ for x in range(15):
 
 #create new ball
 for i in range(5):
-    new_pos = Vector(randint(5, CANVAS_WIDTH), randint(5, CANVAS_HEIGHT))
-    new_vel = Vector(randint(0,10), randint(0,10))
+    new_pos = Vector(randint(11, CANVAS_WIDTH-11), randint(11, CANVAS_HEIGHT-11))
+    new_vel = Vector(randint(0, 10), randint(0, 10))
     new_radius = randint(3, 8)
+    for item in ITEMS:
+        # check if the pinballs will spawn inside the balls
+        pass
     new_ball = Ball(new_pos, new_vel, new_radius, 5, 'Green', False)
     ITEMS.append(new_ball)
 
