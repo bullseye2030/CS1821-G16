@@ -111,8 +111,7 @@ class Interaction:
 
         ball1.vel = v2_x + v1_y     #calculate new velocities
         ball2.vel = v1_x + v2_y
-
-        print("here")
+        
 
     def update(self):
         for item in self.items: #for each ball
@@ -161,8 +160,13 @@ for i in range(5):
     new_vel = Vector(randint(0, 10), randint(0, 10))
     new_radius = randint(3, 8)
     for item in ITEMS:
-        # check if the pinballs will spawn inside the balls
-        pass
+        while True:
+            dist = item.pos.copy().subtract(new_pos).length()
+            if dist <= item.radius + new_radius:
+                new_pos = Vector(randint(11, CANVAS_WIDTH - 11), randint(11, CANVAS_HEIGHT - 11))
+            else:
+                break
+
     new_ball = Ball(new_pos, new_vel, new_radius, 5, 'Green', False)
     ITEMS.append(new_ball)
 
