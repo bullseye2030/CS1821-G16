@@ -3,10 +3,13 @@ try:
 except ImportError:
     import SimpleGUICS2Pygame.simpleguics2pygame as simplegui
 
+from vector import *
+
 CANVAS_HEIGHT = 600
 CANVAS_WIDTH = 600
 BACKGROUND = 'gray'
 BORDER_COLOUR = 'black'
+BORDER_THICKNESS = 15
 
 EMPTY_GRID = [[], []]
 
@@ -71,15 +74,27 @@ def create_map(rows,columns): #return array of 0's to represent map
 
 class Map:
 
+    def __init__(self, items):
+        self.items = items
+
     def generate_map(self):
         return 1 #return complete map from array of numbers
 
 
-def draw(canvas): #callback function to draw entire map, called in update function
-    return 1
+    def draw(self, canvas): #callback function to draw entire map, called in update function
+        for item in self.items:
+            item.draw(canvas)
+
+l = Wall(0, 0, BORDER_THICKNESS, BORDER_COLOUR, 'l')
+r = Wall(0, CANVAS_WIDTH, BORDER_THICKNESS, BORDER_COLOUR, 'r')
+t = Wall(0, 0, BORDER_THICKNESS, BORDER_COLOUR, 't')
+b = Wall(0, CANVAS_HEIGHT, BORDER_THICKNESS, BORDER_COLOUR, 'b')
+ITEMS = [l, r, t, b]
+
+map = Map(ITEMS)
 
 frame = simplegui.create_frame("TANKS!", CANVAS_WIDTH, CANVAS_HEIGHT)
-frame.set_draw_handler(draw)
+frame.set_draw_handler(map.draw)
 
 frame.set_canvas_background(BACKGROUND)
 
