@@ -234,4 +234,3 @@ frame.set_draw_handler(gamemap.draw)
 frame.set_canvas_background(BACKGROUND)
 
 frame.start()
-
