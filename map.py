@@ -18,7 +18,8 @@ BORDER_THICKNESS = 15
 
 EMPTY_GRID = [[], []]
 
-ITEMS = []  #items to be drawn
+ITEMS = []  # items to be drawn
+
 
 class Wall:
     def __init__(self, x, y, width, color, face):
@@ -89,40 +90,21 @@ class Obstacle:
         #canvas.draw_image(self.image, self.image_centre, self.image_dims, (200, 200), (50, 50))
 
 
-def create_map(rows, columns): #return array of 0's to represent map
-    temp = [[0 for column in range(columns+1)] for x in range(rows+1)]
+def create_map(rows,columns): #return array of 0's to represent map
+    temp = [[0 for row in range(rows+1)] for x in range(columns+1)]
     return temp
 
 
 class Map:
 
-    def __init__(self, items, grid_start_coords,  grid_dims, rows, columns, obstacle_rate, obstacle_min_size = 2, obstacle_max_size = 4, debug = False):
-        self.items = items  #should be changed to just instantiate walls here
-        self.grid_start_coords = grid_start_coords  #pixel coordinates of the top left corner of the grid, where 0, 0 would be
-        self.grid_dims = grid_dims  #dimensions of grid in pixels, format y, x
+    def __init__(self, items, rows, columns, obstacle_rate, debug = False):
+        self.items = items
         self.rows = rows
         self.columns = columns
+        self.heat_map = [[], []]    #2d array of 1's and 0's
+        self.grid = [[], []] #2d array of grid coordinates
         self.obstacle_rate = obstacle_rate
-        self.obstacle_min_size = obstacle_min_size  #minimum size of obstacles
-        self.obstacle_max_size = obstacle_max_size  #maximum size of obstacles
         self.debug = debug #if true then lines will be drawn to show the grid
-
-        #self.image = simplegui._load_local_image("map_sprites/block_sprite.png")
-        self.image = simplegui.load_image('https://lh3.googleusercontent.com/X8MWUElYqJ5DFjHbuOF2diN9ARFFPVqp3CHJNx8XCItvgxNKeNMIOn_iEmv2Bkqk88Qx9hw1bQmFSWDF1BOX=s400')
-        self.img_dims = (self.image.get_width(), self.image.get_height())
-        self.img_centre = (self.img_dims[0]/2, self.img_dims[1]/2)
-        self.obs_dims = (self.grid_dims[0]/columns, self.grid_dims[1]/rows)
-        print(self.img_dims)
-        print(self.img_centre)
-        print(self.obs_dims)
-
-
-        heatmap = self.generate_heat_map()
-        obstacles = self.heatmap_to_obstacles(heatmap)
-        for i in obstacles:
-            items.append(i)
-
-        print(obstacles[5].obs_centre)
 
 
     def draw(self, canvas): #callback function to draw entire map, called in update function
@@ -142,44 +124,16 @@ class Map:
         for y in range(self.rows):  # y because go down columns first then pick a row number
             for x in range(self.columns):
                 if gamemap[y][x] != 0:  #check if map already has an obstacle there; if it is 1 then ignore
-                    #pick direction of growth
-                    direction_x = -1 if randint(0, 1) % 0 == 0 else 1    #pick whether one arm of the obstacle will go left or right
-                    direction_y = -1 if randint(0, 1) % 0 == 0 else 1
-                    #pick size
-                    obstacle_size = randint(self.obstacle_min_size, self.obstacle_max_size)
-                    #build temp map
-                    create_map(self.rows, self.columns)
-                    start_coords = (y, x)   #
                     #do checks here
-                    self.check_overlap()
+
                     gamemap[y][x] = 1  #change gamemap after everything else is done
-
-    def build_block(self, main_map, start_coords, size):
-        #main map is 2d array with all the other obstacles on it
-        #start is coordinates (indexes) of starting points
-        #size is how big the obstacle will be
-        tmap = create_map(self.rows, self.columns)
-        for x in range(start_coords[0], start_coords[0] + size):
-            for y in range(start_coords[1], start_coords[1] + size):
-                y = y % self.columns
-                x = x % self.rows
-                tmap[y][x] = 1
-        if not self.check_overlap(main_map, tmap):  #checks if the obstacle will overlap with existing obstacles
-            for x in range(start_coords[0], start_coords[0] + size):
-                for y in range(start_coords[1], start_coords[1] + size):
-                    y = y % self.columns
-                    x = x % self.rows
-                    if tmap[y][x] == 1:
-                        main_map[y][x] = 1
-        return main_map
-
 
 
     def generate_heat_map(self):    #return 2d array of numbers
         temp_map = create_map(self.rows, self.columns)
-        for x in range(self.rows):  #y because go down columns first then pick a row number
+        for x in range(self.rows):  # y because go down columns first then pick a row number
             for y in range(self.columns):
-                if randint(1, self.obstacle_rate) == 1:     #a 1/obstacle rate chance of creating an obstacles
+                if randint(1, self.obstacle_rate) == 1:  # a 1/obstacle rate chance of creating an obstacles
                     obstacle = randint(1, 4)
                     obstacle = 2    #for debug
                     start_coords = (x, y)
@@ -234,3 +188,5 @@ frame.set_draw_handler(gamemap.draw)
 frame.set_canvas_background(BACKGROUND)
 
 frame.start()
+
+
