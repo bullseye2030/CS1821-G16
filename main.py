@@ -3,7 +3,7 @@ try:
 except ImportError:
     import SimpleGUICS2Pygame.simpleguics2pygame as simplegui
 
-import math
+import math, time
 from vector import Vector
 
 # Canvas Dimensions
@@ -15,6 +15,7 @@ items = []
 
 class Keyboard:
     """Keyboard input class to check for user input on every update"""
+
     def __init__(self):
         self.key_released = ""
         self.w = False
@@ -72,9 +73,10 @@ class Tank:
         self.health = health  # Health value - default range 0-100 for normal tanks, potential for 2x health for others
         self.fire_rate = fire_rate  # Fire rate - default 1 (fires once a second) - can do draw_number % (60/fire_rate)
         self.speed = speed  # Speed value - Vector - default 1
-        self.colour = colour  # Colour - load different tank image for different colour
+        self.destroyed = True
         self.sprites = self.get_sprites()
         self.dims = []
+        self.frame_number = 0
         for sprite in self.sprites:
             self.dims.append([sprite.get_width(), sprite.get_height()])
 
@@ -84,18 +86,43 @@ class Tank:
             "https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/bluetank.png?raw=true")
         cannon = simplegui.load_image(
             "https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/blueturret.png?raw=true")
-        return [tank, cannon]
+        exp1 = simplegui.load_image(
+            "https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/explosion2.png?raw=true")
+        exp2 = simplegui.load_image(
+            "https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/explosion1.png?raw=true")
+        exp3 = simplegui.load_image(
+            "https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/explosion3.png?raw=true")
+        return [tank, cannon, exp1, exp2, exp3]
 
     def draw(self, canvas):
         """Method to draw the tank on the canvas - tank body then cannon"""
-        canvas.draw_image(self.sprites[0], (self.dims[0][0] / 2, self.dims[0][1] / 2),
-                          self.dims[0], self.pos.get_p(),
-                          (self.dims[0][0], self.dims[0][1]),
-                          self.tank_angle)
-        canvas.draw_image(self.sprites[1], (self.dims[1][0] / 2, self.dims[1][1] / 2),
-                          self.dims[1], self.pos.get_p(),
-                          (self.dims[1][0], self.dims[1][1]),
-                          self.cannon_angle)
+        if not self.destroyed:
+            canvas.draw_image(self.sprites[0], (self.dims[0][0] / 2, self.dims[0][1] / 2),
+                              self.dims[0], self.pos.get_p(),
+                              (self.dims[0][0], self.dims[0][1]),
+                              self.tank_angle)
+            canvas.draw_image(self.sprites[1], (self.dims[1][0] / 2, self.dims[1][1] / 2),
+                              self.dims[1], self.pos.get_p(),
+                              (self.dims[1][0], self.dims[1][1]),
+                              self.cannon_angle)
+        else:
+            if len(self.sprites) > 2:
+                canvas.draw_image(self.sprites[0], (self.dims[0][0] / 2, self.dims[0][1] / 2),
+                                  self.dims[0], self.pos.get_p(),
+                                  (self.dims[0][0], self.dims[0][1]),
+                                  self.tank_angle)
+                canvas.draw_image(self.sprites[1], (self.dims[1][0] / 2, self.dims[1][1] / 2),
+                                  self.dims[1], self.pos.get_p(),
+                                  (self.dims[1][0], self.dims[1][1]),
+                                  self.cannon_angle)
+                canvas.draw_image(self.sprites[2], (self.dims[2][0] / 2, self.dims[2][1] / 2),
+                                  self.dims[2], self.pos.get_p(),
+                                  (self.dims[2][0], self.dims[2][1]))
+                if self.frame_number % 10 == 0:
+                    self.sprites.remove(self.sprites[2])
+                    self.dims.remove(self.dims[2])
+                    print("removed sprite")
+                self.frame_number += 1
 
 
 class PlayerTank(Tank):
@@ -106,16 +133,16 @@ class PlayerTank(Tank):
     def move(self):
         """Method called on every update which checks user input and moves the tank accordingly"""
         if self.keyboard.d:
-            self.vel.add(Vector(self.speed/10, 0))
-            self.tank_angle = 270*(math.pi/180)
+            self.vel.add(Vector(self.speed / 10, 0))
+            self.tank_angle = 270 * (math.pi / 180)
         if self.keyboard.a:
-            self.vel.add(Vector(-self.speed/10, 0))
-            self.tank_angle = 90*(math.pi/180)
+            self.vel.add(Vector(-self.speed / 10, 0))
+            self.tank_angle = 90 * (math.pi / 180)
         if self.keyboard.w:
-            self.vel.add(Vector(0, -self.speed/10))
-            self.tank_angle = 180*(math.pi/180)
+            self.vel.add(Vector(0, -self.speed / 10))
+            self.tank_angle = 180 * (math.pi / 180)
         if self.keyboard.s:
-            self.vel.add(Vector(0, self.speed/10))
+            self.vel.add(Vector(0, self.speed / 10))
             self.tank_angle = 0
         if not self.keyboard.d and not self.keyboard.a and not self.keyboard.w and not self.keyboard.s:
             self.vel = Vector(0, 0)
@@ -134,6 +161,10 @@ class EnemyTank(Tank):
         super().__init__(x, y, health, fire_rate, speed, colour)
         self.ammo_type = ammo_type
         self.difficulty = difficulty
+        self.sprites[0] = simplegui.load_image(
+            "https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/tantank.png?raw=true")
+        self.sprites[1] = simplegui.load_image(
+            "https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/tanturret.png?raw=true")
 
     def make_move(self):
         """Method called on every update which randomly decides if and when the tank wants to move"""
@@ -153,20 +184,6 @@ class Projectile:
         projectile = simplegui.load_image(
             "https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/projectile.png?raw=true")
         return [projectile]
-
-
-class Explosion:
-    def __init__(self):
-        self.sprites = self.get_sprites()
-
-    def get_sprites(self):
-        exp1 = simplegui.load_image(
-            "https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/explosion1.png?raw=true")
-        exp2 = simplegui.load_image(
-            "https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/explosion2.png?raw=true")
-        exp3 = simplegui.load_image(
-            "https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/explosion3.png?raw=true")
-        return [exp1, exp2, exp3]
 
 
 class FastProjectile(Projectile):
