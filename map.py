@@ -105,7 +105,7 @@ def mirror_list(input_list):
 
 class Map:
 
-    def __init__(self, items, grid_start_coords,  grid_dims, rows, columns, obstacle_rate, obstacle_min_size = 2, obstacle_max_size = 4, mirror_map = True,debug = False):
+    def __init__(self, items = [], grid_start_coords,  grid_dims, rows, columns, obstacle_rate, obstacle_min_size = 2, obstacle_max_size = 4, mirror_map = True,debug = False):
         self.items = items  #should be changed to just instantiate walls here
         self.grid_start_coords = grid_start_coords  #pixel coordinates of the top left corner of the grid, where 0, 0 would be
         self.grid_dims = grid_dims  #dimen0sions of grid in pixels, format y, x
@@ -234,14 +234,15 @@ class Map:
         print(np.matrix(heatmap))
         return blocks
 
-l = Wall(0, 0, BORDER_THICKNESS, BORDER_COLOUR, 'l')
-r = Wall(0, CANVAS_WIDTH, BORDER_THICKNESS, BORDER_COLOUR, 'r')
-t = Wall(0, 0, BORDER_THICKNESS, BORDER_COLOUR, 't')
-b = Wall(0, CANVAS_HEIGHT, BORDER_THICKNESS, BORDER_COLOUR, 'b')
-ITEMS = [l, r, t, b]
+def create_map():
+    l = Wall(0, 0, BORDER_THICKNESS, BORDER_COLOUR, 'l')        #define walls and pass as initial items to draw
+    r = Wall(0, CANVAS_WIDTH, BORDER_THICKNESS, BORDER_COLOUR, 'r')
+    t = Wall(0, 0, BORDER_THICKNESS, BORDER_COLOUR, 't')
+    b = Wall(0, CANVAS_HEIGHT, BORDER_THICKNESS, BORDER_COLOUR, 'b')
+    ITEMS = [l, r, t, b]
+    gamemap = Map(ITEMS, GRID_START_COORDS, GRID_DIMS, 30, 30, 35)
+    return gamemap
 
-
-gamemap = Map(ITEMS, GRID_START_COORDS, GRID_DIMS, 30, 30, 35)
 frame = simplegui.create_frame("TANKS!", CANVAS_WIDTH, CANVAS_HEIGHT)
 frame.set_draw_handler(gamemap.draw)
 
