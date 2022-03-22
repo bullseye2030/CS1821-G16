@@ -243,10 +243,10 @@ def create_map():
     gamemap = Map(ITEMS, GRID_START_COORDS, GRID_DIMS, 30, 30, 35)
     return gamemap
 
-frame = simplegui.create_frame("TANKS!", CANVAS_WIDTH, CANVAS_HEIGHT)
-frame.set_draw_handler(gamemap.draw)
+#frame = simplegui.create_frame("TANKS!", CANVAS_WIDTH, CANVAS_HEIGHT)
+#frame.set_draw_handler(gamemap.draw)
 
-frame.set_canvas_background(BACKGROUND)
+#frame.set_canvas_background(BACKGROUND)
 
-frame.start()
+#frame.start()
 
