@@ -7,8 +7,8 @@ import math
 from vector import Vector
 
 # Canvas Dimensions
-CANVAS_WIDTH = 600
-CANVAS_HEIGHT = 400
+CANVAS_WIDTH = 768  # 48*16
+CANVAS_HEIGHT = 576  # 48*12
 
 items = []
 
@@ -52,7 +52,7 @@ class Keyboard:
         if key == simplegui.KEY_MAP['d']:
             self.d = False
         if key == simplegui.KEY_MAP['a']:
-            self.a = True
+            self.a = False
         if key == simplegui.KEY_MAP['w']:
             self.w = False
         if key == simplegui.KEY_MAP['s']:
@@ -80,8 +80,10 @@ class Tank:
 
     def get_sprites(self):
         """Method to get the right sprites (correct colour) for the tank, return as a list (tank body and cannon)"""
-        tank = simplegui.load_image("https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/bluetank.png?raw=true")
-        cannon = simplegui.load_image("https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/blueturret.png?raw=true")
+        tank = simplegui.load_image(
+            "https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/bluetank.png?raw=true")
+        cannon = simplegui.load_image(
+            "https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/blueturret.png?raw=true")
         return [tank, cannon]
 
     def draw(self, canvas):
@@ -148,7 +150,23 @@ class Projectile:
 
     def get_sprites(self):
         """Method called by constructor to get the correct sprites, return as a list (trail image and projectile)"""
-        return []
+        projectile = simplegui.load_image(
+            "https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/projectile.png?raw=true")
+        return [projectile]
+
+
+class Explosion:
+    def __init__(self):
+        self.sprites = self.get_sprites()
+
+    def get_sprites(self):
+        exp1 = simplegui.load_image(
+            "https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/explosion1.png?raw=true")
+        exp2 = simplegui.load_image(
+            "https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/explosion2.png?raw=true")
+        exp3 = simplegui.load_image(
+            "https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/explosion3.png?raw=true")
+        return [exp1, exp2, exp3]
 
 
 class FastProjectile(Projectile):
