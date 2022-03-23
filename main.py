@@ -4,7 +4,6 @@ except ImportError:
     import SimpleGUICS2Pygame.simpleguics2pygame as simplegui
 
 import math
-import map
 from vector import Vector
 
 # Canvas Dimensions
@@ -203,6 +202,7 @@ class PlayerTank(Tank):
 
     def move(self):
         """Method called on every update which checks user input and moves the tank accordingly"""
+        self.tank_angle = self.tank_angle + self.vel.angle(self.tank_angle)
         if self.keyboard.d:
             self.vel.add(Vector(self.speed / 10, 0))
             self.tank_angle = 270 * (math.pi / 180)
@@ -218,9 +218,19 @@ class PlayerTank(Tank):
         if not self.keyboard.d and not self.keyboard.a and not self.keyboard.w and not self.keyboard.s:
             self.vel = Vector(0, 0)
         if self.keyboard.q:
-            self.cannon_angle += 0.03
+            self.cannon_angle += 0.05
         if self.keyboard.e:
-            self.cannon_angle -= 0.03
+            self.cannon_angle -= 0.05
+
+        # set max speed
+        if self.vel.x > self.speed:
+            self.vel = Vector(min(self.vel.x, self.speed), self.vel.y)
+        if self.vel.x < -self.speed:
+            self.vel = Vector(max(self.vel.x, -self.speed), self.vel.y)
+        if self.vel.y > self.speed:
+            self.vel = Vector(self.vel.x, min(self.vel.y, self.speed))
+        if self.vel.y < -self.speed:
+            self.vel = Vector(self.vel.x, max(self.vel.y, -self.speed))
 
     def update(self):
         self.pos.add(self.vel)
@@ -260,6 +270,9 @@ class Projectile:
         """Spawn the projectile at the given tank"""
         pass
 
+    def draw(self, canvas):
+        pass
+
 
 def draw_handler(canvas):
     if menu.show or player.destroyed:
@@ -278,7 +291,6 @@ ITEMS = []
 kbd = Keyboard()
 menu = Menu(kbd)
 player = PlayerTank(30, 30, 3, 1, 1, kbd)
-map = map.create_map()
 
 
 ITEMS.append(player)
