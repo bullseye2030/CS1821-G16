@@ -5,6 +5,8 @@ except ImportError:
 
 import math
 from vector import Vector
+import map
+
 
 # Canvas Dimensions
 CANVAS_WIDTH = 768  # 48*16
@@ -197,6 +199,20 @@ class Tank:
             else:
                 self.destroyed = True
 
+    def damage(self):
+        self.health -= 1
+        if self.health <= 0:
+            self.destroyed = True
+
+    def collide(self, normal):
+        self.vel.reflect(normal)
+
+    def update(self):
+        self.pos.add(self.vel)
+        self.move()
+        for item in ITEMS:
+            item.check_collision(item)
+
 
 class PlayerTank(Tank):
     def __init__(self, x, y, health, fire_rate, speed, keyboard):
@@ -287,8 +303,16 @@ class Projectile:
                           self.angle  # rotation
                           )
 
+    def collide(self, normal):  # if hitting a wall then bounce
+        self.vel.reflect(normal)
+
+    def hit(self, tank):  # if hitting a tank then damage it
+        tank.damage()
+
     def update(self):
         self.pos.add(self.vel)
+        for item in ITEMS:
+            item.check_collision(item)
 
 
 def draw_handler(canvas):
@@ -310,10 +334,14 @@ def draw_handler(canvas):
 ITEMS = []
 
 kbd = Keyboard()
+gamemap = map.create_gamemap()
 menu = Menu(kbd)
 player = PlayerTank(30, 30, 3, 1, 1, kbd)
 
+ITEMS.append(gamemap)
 ITEMS.append(player)
+
+
 
 frame = simplegui.create_frame("Tanks", CANVAS_WIDTH, CANVAS_HEIGHT)
 frame.set_draw_handler(draw_handler)
