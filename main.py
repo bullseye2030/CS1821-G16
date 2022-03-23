@@ -3,7 +3,8 @@ try:
 except ImportError:
     import SimpleGUICS2Pygame.simpleguics2pygame as simplegui
 
-import math, time
+import math
+import map
 from vector import Vector
 
 # Canvas Dimensions
@@ -21,7 +22,7 @@ class Menu:
             "https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/menu.png?raw=true")
         self.end_image = simplegui.load_image(
             "https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/gameover.png?raw=true")
-        self.dims = (self.start_image.get_width(), self.start_image.get_height())
+        self.dims = (self.start_image.get_width(), self.start_image.get_height())  # Same for menu and game over images
         self.keyboard = keyboard
         self.show = True
 
@@ -29,26 +30,31 @@ class Menu:
         global difficulty, player
         if self.show:
             if not player.destroyed:
-                canvas.draw_image(self.start_image, (self.dims[0] / 2, self.dims[1] / 2),
-                                  (self.dims[0], self.dims[1]), (self.dims[0], self.dims[1]),
-                                  (self.dims[0], self.dims[1]))
+                canvas.draw_image(self.start_image,                       # image,
+                                  (self.dims[0] / 2, self.dims[1] / 2),   # center_source,
+                                  (self.dims[0], self.dims[1]),           # width_height_source,
+                                  (self.dims[0] / 2, self.dims[1] / 2),   # center_dest,
+                                  (self.dims[0], self.dims[1])            # width_height_dest
+                                  )
             else:
-                canvas.draw_image(self.end_image, (self.dims[0] / 2, self.dims[1] / 2),
-                                  (self.dims[0], self.dims[1]), (self.dims[0], self.dims[1]),
-                                  (self.dims[0], self.dims[1]))
+                canvas.draw_image(self.end_image,                         # image,
+                                  (self.dims[0] / 2, self.dims[1] / 2),   # center_source,
+                                  (self.dims[0], self.dims[1]),           # width_height_source,
+                                  (self.dims[0] / 2, self.dims[1] / 2),   # center_dest,
+                                  (self.dims[0], self.dims[1])            # width_height_dest
+                                  )
                 canvas.draw_text(str(round_number), (460, 312), 22, "white")
                 if self.keyboard.space:
                     exit()
-        else:
-            if self.keyboard.one:
-                difficulty = 1
-                self.show = False
-            if self.keyboard.two:
-                difficulty = 2
-                self.show = False
-            if self.keyboard.three:
-                difficulty = 3
-                self.show = False
+        if self.keyboard.one:
+            difficulty = 1
+            self.show = False
+        if self.keyboard.two:
+            difficulty = 2
+            self.show = False
+        if self.keyboard.three:
+            difficulty = 3
+            self.show = False
 
 
 class Keyboard:
@@ -113,7 +119,7 @@ class Keyboard:
 
 
 class Tank:
-    def __init__(self, x, y, health, fire_rate, speed, colour):
+    def __init__(self, x, y, health, fire_rate, speed):
         self.pos = Vector(x, y)
         self.vel = Vector()
         self.cannon_angle = 0.0  # Default angle from normal - starts cannon pointing left
@@ -121,7 +127,7 @@ class Tank:
         self.health = health  # Health value - default range 3-0 for player tank (2 and 1 for damaged, 0 for destroyed)
         self.fire_rate = fire_rate  # Fire rate - default 1 (fires once a second) - can do draw_number % (60/fire_rate)
         self.speed = speed  # Speed value - Vector - default 1
-        self.destroyed = True
+        self.destroyed = False
         self.sprites = self.get_sprites()
         self.dims = []
         self.frame_number = 0
@@ -134,27 +140,43 @@ class Tank:
             "https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/bluetank.png?raw=true")
         cannon = simplegui.load_image(
             "https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/blueturret.png?raw=true")
+        tankdamaged = simplegui.load_image(
+            "https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/bluetankdamaged.png?raw=true")
+        tankdamaged2 = simplegui.load_image(
+            "https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/bluetankdamaged2.png?raw=true")
         exp1 = simplegui.load_image(
             "https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/explosion2.png?raw=true")
         exp2 = simplegui.load_image(
             "https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/explosion1.png?raw=true")
         exp3 = simplegui.load_image(
             "https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/explosion3.png?raw=true")
-        return [tank, cannon, exp1, exp2, exp3]
+        return [tank, cannon, tankdamaged, tankdamaged2, exp1, exp2, exp3]
 
     def draw(self, canvas):
         """Method to draw the tank on the canvas - tank body then cannon"""
         if not self.destroyed:
-            canvas.draw_image(self.sprites[0], (self.dims[0][0] / 2, self.dims[0][1] / 2),
-                              self.dims[0], self.pos.get_p(),
-                              (self.dims[0][0], self.dims[0][1]),
-                              self.tank_angle)
+            if self.health == 3:
+                canvas.draw_image(self.sprites[0], (self.dims[0][0] / 2, self.dims[0][1] / 2),
+                                  self.dims[0], self.pos.get_p(),
+                                  (self.dims[0][0], self.dims[0][1]),
+                                  self.tank_angle)
+            if self.health == 2:
+                canvas.draw_image(self.sprites[2], (self.dims[2][0] / 2, self.dims[2][1] / 2),
+                                  self.dims[2], self.pos.get_p(),
+                                  (self.dims[2][0], self.dims[2][1]),
+                                  self.tank_angle)
+            if self.health == 1:
+                canvas.draw_image(self.sprites[3], (self.dims[3][0] / 2, self.dims[3][1] / 2),
+                                  self.dims[3], self.pos.get_p(),
+                                  (self.dims[3][0], self.dims[3][1]),
+                                  self.tank_angle)
+            # Draw tank cannon
             canvas.draw_image(self.sprites[1], (self.dims[1][0] / 2, self.dims[1][1] / 2),
                               self.dims[1], self.pos.get_p(),
                               (self.dims[1][0], self.dims[1][1]),
                               self.cannon_angle)
         else:
-            if len(self.sprites) > 2:
+            if len(self.sprites) > 4:
                 canvas.draw_image(self.sprites[0], (self.dims[0][0] / 2, self.dims[0][1] / 2),
                                   self.dims[0], self.pos.get_p(),
                                   (self.dims[0][0], self.dims[0][1]),
@@ -163,20 +185,20 @@ class Tank:
                                   self.dims[1], self.pos.get_p(),
                                   (self.dims[1][0], self.dims[1][1]),
                                   self.cannon_angle)
-                canvas.draw_image(self.sprites[2], (self.dims[2][0] / 2, self.dims[2][1] / 2),
-                                  self.dims[2], self.pos.get_p(),
-                                  (self.dims[2][0], self.dims[2][1]))
+                canvas.draw_image(self.sprites[4], (self.dims[4][0] / 2, self.dims[4][1] / 2),
+                                  self.dims[4], self.pos.get_p(),
+                                  (self.dims[4][0], self.dims[4][1]))
                 if self.frame_number % 10 == 0:
-                    self.sprites.remove(self.sprites[2])
-                    self.dims.remove(self.dims[2])
+                    self.sprites.remove(self.sprites[4])
+                    self.dims.remove(self.dims[4])
                 self.frame_number += 1
             else:
-                pass
+                self.destroyed = True
 
 
 class PlayerTank(Tank):
-    def __init__(self, x, y, health, fire_rate, speed, colour, keyboard):
-        super().__init__(x, y, health, fire_rate, speed, colour)
+    def __init__(self, x, y, health, fire_rate, speed, keyboard):
+        super().__init__(x, y, health, fire_rate, speed)
         self.keyboard = keyboard
 
     def move(self):
@@ -206,9 +228,9 @@ class PlayerTank(Tank):
 
 
 class EnemyTank(Tank):
-    def __init__(self, x, y, health, fire_rate, speed, colour, ammo_type, difficulty):
-        super().__init__(x, y, health, fire_rate, speed, colour)
-        self.ammo_type = ammo_type
+    def __init__(self, x, y, health, fire_rate, speed):
+        global difficulty
+        super().__init__(x, y, health, fire_rate, speed)
         self.difficulty = difficulty
         self.sprites[0] = simplegui.load_image(
             "https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/tantank.png?raw=true")
@@ -221,11 +243,11 @@ class EnemyTank(Tank):
 
 
 class Projectile:
-    def __init__(self, x, y, speed, trail_colour, damage):
+    def __init__(self, x, y, speed):
         self.pos = Vector(x, y)
+        self.vel = Vector()
         self.speed = speed
-        self.trail_colour = trail_colour
-        self.damage = damage
+        self.bounces_left = 3
         self.sprites = self.get_sprites()
 
     def get_sprites(self):
@@ -233,6 +255,10 @@ class Projectile:
         projectile = simplegui.load_image(
             "https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/projectile.png?raw=true")
         return [projectile]
+
+    def spawn(self, tank):
+        """Spawn the projectile at the given tank"""
+        pass
 
 
 def draw_handler(canvas):
@@ -251,7 +277,10 @@ ITEMS = []
 
 kbd = Keyboard()
 menu = Menu(kbd)
-player = PlayerTank(30, 30, 3, 1, 1, "blue", kbd)
+player = PlayerTank(30, 30, 3, 1, 1, kbd)
+map = map.create_map()
+
+
 ITEMS.append(player)
 
 frame = simplegui.create_frame("Tanks", CANVAS_WIDTH, CANVAS_HEIGHT)
