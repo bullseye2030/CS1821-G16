@@ -135,6 +135,7 @@ class Tank:
         for sprite in self.sprites:
             self.dims.append([sprite.get_width(), sprite.get_height()])
 
+    # noinspection PyMethodMayBeStatic
     def get_sprites(self):
         """Method to get the right sprites (correct colour) for the tank, return as a list (tank body and cannon)"""
         tank = simplegui.load_image(
