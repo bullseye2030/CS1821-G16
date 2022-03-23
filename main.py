@@ -11,6 +11,44 @@ CANVAS_WIDTH = 768  # 48*16
 CANVAS_HEIGHT = 576  # 48*12
 
 items = []
+difficulty = 0
+round_number = 0
+
+
+class Menu:
+    def __init__(self, keyboard):
+        self.start_image = simplegui.load_image(
+            "https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/menu.png?raw=true")
+        self.end_image = simplegui.load_image(
+            "https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/gameover.png?raw=true")
+        self.dims = (self.start_image.get_width(), self.start_image.get_height())
+        self.keyboard = keyboard
+        self.show = True
+
+    def draw(self, canvas):
+        global difficulty, player
+        if self.show:
+            if not player.destroyed:
+                canvas.draw_image(self.start_image, (self.dims[0] / 2, self.dims[1] / 2),
+                                  (self.dims[0], self.dims[1]), (self.dims[0], self.dims[1]),
+                                  (self.dims[0], self.dims[1]))
+            else:
+                canvas.draw_image(self.end_image, (self.dims[0] / 2, self.dims[1] / 2),
+                                  (self.dims[0], self.dims[1]), (self.dims[0], self.dims[1]),
+                                  (self.dims[0], self.dims[1]))
+                canvas.draw_text(str(round_number), (460, 312), 22, "white")
+                if self.keyboard.space:
+                    exit()
+        else:
+            if self.keyboard.one:
+                difficulty = 1
+                self.show = False
+            if self.keyboard.two:
+                difficulty = 2
+                self.show = False
+            if self.keyboard.three:
+                difficulty = 3
+                self.show = False
 
 
 class Keyboard:
@@ -197,24 +235,23 @@ class Projectile:
         return [projectile]
 
 
-class FastProjectile(Projectile):
-    def __init__(self, x, y, speed, trail_colour, damage):
-        super().__init__(x, y, speed, trail_colour, damage)
-
-
 def draw_handler(canvas):
-    for item in ITEMS:
-        try:
-            item.update()
-            item.draw(canvas)
-        except AttributeError:
-            pass
+    if menu.show or player.destroyed:
+        menu.draw(canvas)
+    else:
+        for item in ITEMS:
+            try:
+                item.update()
+                item.draw(canvas)
+            except AttributeError:
+                pass
 
 
 ITEMS = []
 
 kbd = Keyboard()
-player = PlayerTank(30, 30, 100, 1, 1, "blue", kbd)
+menu = Menu(kbd)
+player = PlayerTank(30, 30, 3, 1, 1, "blue", kbd)
 ITEMS.append(player)
 
 frame = simplegui.create_frame("Tanks", CANVAS_WIDTH, CANVAS_HEIGHT)
