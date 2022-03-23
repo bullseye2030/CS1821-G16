@@ -24,8 +24,10 @@ class Keyboard:
         self.d = False
         self.q = False
         self.e = False
+        self.one = False
+        self.two = False
+        self.three = False
         self.space = False
-        self.r = False
 
     def key_down(self, key):
         if key == simplegui.KEY_MAP['q']:
@@ -40,8 +42,12 @@ class Keyboard:
             self.w = True
         if key == simplegui.KEY_MAP['s']:
             self.s = True
-        if key == simplegui.KEY_MAP['r']:
-            self.r = True
+        if key == simplegui.KEY_MAP['1']:
+            self.one = True
+        if key == simplegui.KEY_MAP['2']:
+            self.two = True
+        if key == simplegui.KEY_MAP['3']:
+            self.three = True
         if key == simplegui.KEY_MAP['space']:
             self.space = True
 
@@ -58,8 +64,12 @@ class Keyboard:
             self.w = False
         if key == simplegui.KEY_MAP['s']:
             self.s = False
-        if key == simplegui.KEY_MAP['r']:
-            self.r = False
+        if key == simplegui.KEY_MAP['1']:
+            self.one = False
+        if key == simplegui.KEY_MAP['2']:
+            self.two = False
+        if key == simplegui.KEY_MAP['3']:
+            self.three = False
         if key == simplegui.KEY_MAP['space']:
             self.space = False
 
@@ -70,7 +80,7 @@ class Tank:
         self.vel = Vector()
         self.cannon_angle = 0.0  # Default angle from normal - starts cannon pointing left
         self.tank_angle = 0.0  # Default angle from normal - starts tank pointing left
-        self.health = health  # Health value - default range 0-100 for normal tanks, potential for 2x health for others
+        self.health = health  # Health value - default range 3-0 for player tank (2 and 1 for damaged, 0 for destroyed)
         self.fire_rate = fire_rate  # Fire rate - default 1 (fires once a second) - can do draw_number % (60/fire_rate)
         self.speed = speed  # Speed value - Vector - default 1
         self.destroyed = True
@@ -121,8 +131,9 @@ class Tank:
                 if self.frame_number % 10 == 0:
                     self.sprites.remove(self.sprites[2])
                     self.dims.remove(self.dims[2])
-                    print("removed sprite")
                 self.frame_number += 1
+            else:
+                pass
 
 
 class PlayerTank(Tank):
