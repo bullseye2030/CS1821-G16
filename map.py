@@ -1,3 +1,5 @@
+import math
+
 try:
     import simplegui
 except ImportError:
@@ -15,11 +17,12 @@ GRID_START_COORDS = (50, 50)
 GRID_DIMS = (516, 708)
 BACKGROUND = 'gray'
 BORDER_COLOUR = 'gray'
-BORDER_THICKNESS = 10
+BORDER_THICKNESS = 50
 
 EMPTY_GRID = [[], []]
 
 ITEMS = []  # items to be drawn
+walls = []
 
 
 class Wall:
@@ -102,7 +105,7 @@ class Obstacle:
         if abs(item.pos.x - self.obs_centre[0]) < self.obs_dims[0] and abs(item.pos.y - self.obs_centre[1]) < \
                 self.obs_dims[1]:  # check by calculating if position of object is in obstacle
             normal = item.pos.copy().subtract(Vector(self.obs_centre[0], self.obs_centre[1]))
-            item.collide(normal)
+            item.collide(self)
 
 
 class FloorTile:
@@ -158,6 +161,7 @@ class Map:
         self.floor_tile_image_dims = (self.floor_tile_image.get_width(), self.floor_tile_image.get_height())
         self.floor_tile_image_centre = (self.floor_tile_image_dims[0] / 2, self.floor_tile_image_dims[1] / 2)
         self.obs_dims = (self.grid_dims[0] / columns, self.grid_dims[0] / columns)
+        self.floor_tile_dims = (self.obs_dims[0]/1, self.obs_dims[1]/1)
         print(self.img_dims)
         print(self.img_centre)
         print(self.obs_dims)
@@ -170,6 +174,9 @@ class Map:
             items.append(i)
         for i in self.obstacles:
             items.append(i)
+
+        self.t1_spawns = []
+        self.t2_spawns = []
 
     def draw(self, canvas):  # callback function to draw entire map, called in update function
         for item in self.items:
@@ -268,7 +275,7 @@ class Map:
                     new_x = self.obs_dims[1] * x + self.grid_start_coords[1]
                     new_coords = (new_x, new_y)
                     new_tile = FloorTile(self.floor_tile_image, self.floor_tile_image_centre,
-                                         self.floor_tile_image_dims, new_coords, self.obs_dims)
+                                         self.floor_tile_image_dims, new_coords, self.floor_tile_dims)
                     floor_tiles.append(new_tile)
         print(np.matrix(heatmap))
         return blocks, floor_tiles
@@ -276,6 +283,35 @@ class Map:
     def check_collision(self, item):
         for obs in self.obstacles:
             obs.check_collision(item)
+        for wall in walls:
+            wall.check_collision(item)
+
+    def check_spawn_dist(self, spawn_1, spawn_2, minimum_dist):
+        dist = math.sqrt((spawn_1[0]-spawn_2[0])**2 +(spawn_1[1]-spawn_2[1])**2)
+        if dist < minimum_dist:
+            return False
+        else:
+            return True
+
+    def gen_spawn_t1(self):
+        valid_spawn = False
+        friendly_min_distance = 5
+        enemy_min_distance = 10
+        spawn_x = 1
+        spawn_y = 1
+        while not valid_spawn:
+            spawn_x = randint(2, self.rows / 2 - 5)  # spawn on left side of the map
+            spawn_y = randint(2, self.columns - 5)
+            if self.heatmap[spawn_x][spawn_y] == 1:
+                continue
+            for tank_spawn in self.t1_spawns:
+                if not self.check_spawn_dist((spawn_x, spawn_y), tank_spawn, friendly_min_distance): #if the tank spawns to close to a friendly tank
+                    continue    #dont use this spawn and try again
+            for tank_spawn in self.t2_spawns:
+                if not self.check_spawn_dist((spawn_x, spawn_y), tank_spawn, enemy_min_distance):
+                    continue
+            valid_spawn = True
+
 
     def update(self):
         return 1
@@ -287,7 +323,7 @@ def create_gamemap():
     t = Wall(0, 0, BORDER_THICKNESS, BORDER_COLOUR, 't')
     b = Wall(0, CANVAS_HEIGHT, BORDER_THICKNESS, BORDER_COLOUR, 'b')
     ITEMS = [l, r, t, b]
-    gamemap = Map(ITEMS, GRID_START_COORDS, GRID_DIMS, 42, 34, 50)
+    gamemap = Map(ITEMS, GRID_START_COORDS, GRID_DIMS, 32, 24, 50)
     return gamemap
 
 # frame = simplegui.create_frame("TANKS!", CANVAS_WIDTH, CANVAS_HEIGHT)

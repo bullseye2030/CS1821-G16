@@ -204,14 +204,37 @@ class Tank:
         if self.health <= 0:
             self.destroyed = True
 
-    def collide(self, normal):
-        self.vel.reflect(normal)
+    def limit_pos(self, obs_pos, obs_size):
+        """
+        limits position by checking if tanks velocity will carry it into the restricted region (hitbox)
+        returns velocity as a vector
+        :param obs_pos: Vector position of obstacle
+        :param obs_size:   size of obstacle
+        :return: Velocity as a vector
+        """
+        x_lower_lim = obs_pos.x - obs_size  #calculates the start of the hitbox region on the x axis
+        x_upper_lim = obs_pos.x + obs_size  #calculates the end of the hitbox region on the x axis
+        y_lower_lim = obs_pos.y - obs_size
+        y_upper_lim = obs_pos.y + obs_size
+        next_pos_x = self.pos.x + self.vel.x
+        next_pos_y = self.pos.y + self.vel.y
+        temp_vel_x = 0
+        temp_vel_y = 0
+        if next_pos_x > x_lower_lim and next_pos_x < x_upper_lim and next_pos_y > y_lower_lim and next_pos_y < y_upper_lim:
+            return Vector(0, 0)
+        else:
+            return self.vel
+
+    def collide(self, obstacle):
+        self.vel = self.limit_pos(Vector(obstacle.obs_centre[0], obstacle.obs_centre[1]), obstacle.obs_dims[0])
 
     def update(self):
         self.pos.add(self.vel)
         self.move()
-        for item in ITEMS:
-            item.check_collision(item)
+        #code for checking collisions
+        for item in ITEMS:      #first check for collisions with tanks and projectiles
+            item.check_collision(self)
+        gamemap.check_collision(self)   #then check for collisions with walls and obstacles
 
 
 class PlayerTank(Tank):
@@ -266,6 +289,12 @@ class PlayerTank(Tank):
             self.frames_til_next_fire -= 1
         self.fire()
         self.move()
+        #code for checking collisions
+        for item in ITEMS:      #first check for collisions with tanks and projectiles
+            if item == self:
+                continue
+            item.check_collision(self)
+        gamemap.check_collision(self)   #then check for collisions with walls and obstacles
 
 
 class EnemyTank(Tank):
@@ -273,7 +302,7 @@ class EnemyTank(Tank):
         global difficulty
         super().__init__(x, y, health, fire_rate, speed)
         self.difficulty = difficulty
-        self.sprites[0] = simplegui.load_image(
+        self.sprites[0], self.sprites[2], self.sprites[3] = simplegui.load_image(
             "https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/tantank.png?raw=true")
         self.sprites[1] = simplegui.load_image(
             "https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/tanturret.png?raw=true")
@@ -305,14 +334,21 @@ class Projectile:
 
     def collide(self, normal):  # if hitting a wall then bounce
         self.vel.reflect(normal)
+        print(self.vel.angle(normal))
+        if abs(self.vel.angle(normal)) > math.pi:
+            self.vel = Vector(0, 0)
+            print(self.vel.angle(normal))
+
 
     def hit(self, tank):  # if hitting a tank then damage it
         tank.damage()
 
     def update(self):
         self.pos.add(self.vel)
-        for item in ITEMS:
-            item.check_collision(item)
+        #code for checking collisions
+        for item in ITEMS:      #first check for collisions with tanks and projectiles
+            item.check_collision(self)
+        gamemap.check_collision(self)   #then check for collisions with walls and obstacles
 
 
 def draw_handler(canvas):
@@ -323,6 +359,7 @@ def draw_handler(canvas):
     if menu.show or player.destroyed:
         menu.draw(canvas)
     else:
+        gamemap.draw(canvas)
         for item in ITEMS:
             try:
                 item.update()
@@ -338,9 +375,7 @@ gamemap = map.create_gamemap()
 menu = Menu(kbd)
 player = PlayerTank(30, 30, 3, 1, 1, kbd)
 
-ITEMS.append(gamemap)
 ITEMS.append(player)
-
 
 
 frame = simplegui.create_frame("Tanks", CANVAS_WIDTH, CANVAS_HEIGHT)
