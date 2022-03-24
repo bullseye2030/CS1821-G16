@@ -122,7 +122,7 @@ class Keyboard:
 
 
 class Tank:
-    def __init__(self, x, y, health, fire_rate, speed, tank_radius = 4):
+    def __init__(self, x, y, health, fire_rate, speed, tank_radius=4):
         self.pos = Vector(x, y)
         self.vel = Vector()
         self.cannon_angle = 0.0  # Default angle from normal - starts cannon pointing left
@@ -223,7 +223,7 @@ class Tank:
         next_pos_y = self.pos.y + self.vel.y
         temp_vel_x = 0
         temp_vel_y = 0
-        if next_pos_x > x_lower_lim and next_pos_x < x_upper_lim and next_pos_y > y_lower_lim and next_pos_y < y_upper_lim:
+        if x_lower_lim < next_pos_x < x_upper_lim and y_lower_lim < next_pos_y < y_upper_lim:
             return Vector(0, 0)
         else:
             return self.vel
@@ -231,18 +231,18 @@ class Tank:
     def collide_obstacle(self, obstacle):
         self.vel = self.limit_pos(Vector(obstacle.obs_centre[0], obstacle.obs_centre[1]), obstacle.obs_dims[0])
 
-    def limit_input(self, min, max, num):
-        if num < min:
-            return min
-        elif num > max:
-            return max
+    def limit_input(self, minimum, maximum, num):
+        if num < minimum:
+            return minimum
+        elif num > maximum:
+            return maximum
         else:
             return num
 
     def collide_wall(self, wall):
         wall_size = wall.width / 2 + 1
-        self.pos.x = self.limit_input(wall_size, CANVAS_WIDTH-wall_size, self.pos.x)
-        self.pos.y = self.limit_input(wall_size, CANVAS_HEIGHT-wall_size, self.pos.y)
+        self.pos.x = self.limit_input(wall_size, CANVAS_WIDTH - wall_size, self.pos.x)
+        self.pos.y = self.limit_input(wall_size, CANVAS_HEIGHT - wall_size, self.pos.y)
 
     def collide_projectile(self, projectile):
         self.damage()
@@ -263,7 +263,6 @@ class Tank:
         self.cannon_angle = self.cannon_angle % 2 * math.pi  # keep the tank angle between 0 and 2pi
         self.tank_angle = self.tank_angle % 2 * math.pi  # keep the tank angle between 0 and 2pi
         self.pos.add(self.vel)
-        self.move()
         # code for checking collisions
         for item in ITEMS:  # first check for collisions with tanks and projectiles
             item.check_collision(self)
@@ -412,7 +411,7 @@ class EnemyTank(Tank):
 
 
 class Projectile:
-    def __init__(self, x, y, tank, vel, radius = 4):
+    def __init__(self, x, y, tank, vel, radius=4):
         self.tank = tank
         self.pos = Vector(x, y)
         self.vel = vel
@@ -506,17 +505,14 @@ kbd = Keyboard()
 gamemap, enemies = new_round()
 menu = Menu(kbd)
 player_spawn = gamemap.gen_spawn_t1()
-player = PlayerTank(player_spawn[0], player_spawn[1], 3, 1 , 1, kbd)
+player = PlayerTank(player_spawn[0], player_spawn[1], 3, 1, 1, kbd)
 ITEMS.append(player)
 
 num_of_enemy = 2
-for enemy in range(num_of_enemy):
+for _ in range(num_of_enemy):
     enemy_spawn = gamemap.gen_spawn_t2()
     enemy = EnemyTank(enemy_spawn[0], enemy_spawn[1], 1, 1, 1)
     ITEMS.append(enemy)
-
-
-
 
 frame = simplegui.create_frame("Tanks", CANVAS_WIDTH, CANVAS_HEIGHT)
 frame.set_draw_handler(draw_handler)
