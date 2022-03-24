@@ -302,8 +302,8 @@ class Map:
         while not valid_spawn:
             spawn_x = randint(2, self.rows / 2 - 5)  # spawn on left side of the map
             spawn_y = randint(2, self.columns - 5)
-            if self.heatmap[spawn_x][spawn_y] == 1:
-                continue
+            if self.heatmap[spawn_x][spawn_y] == 1: #if there is an obstacle there
+                continue    #dont use this spawn and try again
             for tank_spawn in self.t1_spawns:
                 if not self.check_spawn_dist((spawn_x, spawn_y), tank_spawn, friendly_min_distance): #if the tank spawns to close to a friendly tank
                     continue    #dont use this spawn and try again
@@ -311,7 +311,9 @@ class Map:
                 if not self.check_spawn_dist((spawn_x, spawn_y), tank_spawn, enemy_min_distance):
                     continue
             valid_spawn = True
-
+        new_spawn = (spawn_x, spawn_y)
+        self.t1_spawns.append(new_spawn)
+        return new_spawn
 
     def update(self):
         return 1
