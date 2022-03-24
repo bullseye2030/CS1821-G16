@@ -122,7 +122,7 @@ class Keyboard:
 
 
 class Tank:
-    def __init__(self, x, y, health, fire_rate, speed):
+    def __init__(self, x, y, health, fire_rate, speed, tank_radius = 4):
         self.pos = Vector(x, y)
         self.vel = Vector()
         self.cannon_angle = 0.0  # Default angle from normal - starts cannon pointing left
@@ -132,6 +132,7 @@ class Tank:
         self.health = health  # Health value - default range 3-0 for player tank (2 and 1 for damaged, 0 for destroyed)
         self.fire_rate = fire_rate  # Fire rate - default 1 (fires once a second) - can do draw_number % (60/fire_rate)
         self.speed = speed  # Speed value - default 1
+        self.tank_radius = tank_radius
         self.destroyed = False
         self.sprites = self.get_sprites()
         self.dims = []
@@ -227,8 +228,36 @@ class Tank:
         else:
             return self.vel
 
-    def collide(self, obstacle):
+    def collide_obstacle(self, obstacle):
         self.vel = self.limit_pos(Vector(obstacle.obs_centre[0], obstacle.obs_centre[1]), obstacle.obs_dims[0])
+
+    def limit_input(self, min, max, num):
+        if num < min:
+            return min
+        elif num > max:
+            return max
+        else:
+            return num
+
+    def collide_wall(self, wall):
+        wall_size = wall.width / 2 + 1
+        self.pos.x = self.limit_input(wall_size, CANVAS_WIDTH-wall_size, self.pos.x)
+        self.pos.y = self.limit_input(wall_size, CANVAS_HEIGHT-wall_size, self.pos.y)
+
+    def collide_projectile(self, projectile):
+        self.damage()
+        projectile.destroy()
+
+    def check_collision(self, item):
+        """
+        function to check for collision with tanks and projectiles
+        :param item:
+        :return:
+        """
+        if item == self or not type(item) == Tank:
+            return
+        if item.pos.copy().subtract(self.pos).length() < self.tank_radius:
+            item.collide(self)
 
     def update(self):
         self.cannon_angle = self.cannon_angle % 2 * math.pi  # keep the tank angle between 0 and 2pi
@@ -308,7 +337,7 @@ class EnemyTank(Tank):
         self.movement = ""
         self.frames_left_for_move = 0
         self.difficulty = difficulty
-        self.sprites[0], self.sprites[2], self.sprites[3] = simplegui.load_image(
+        self.sprites[0] = self.sprites[2] = self.sprites[3] = simplegui.load_image(
             "https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/tantank.png?raw=true")
         self.sprites[1] = simplegui.load_image(
             "https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/tanturret.png?raw=true")
@@ -381,11 +410,13 @@ class EnemyTank(Tank):
     def update(self):
         self.make_move()
 
+
 class Projectile:
-    def __init__(self, x, y, tank, vel):
+    def __init__(self, x, y, tank, vel, radius = 4):
         self.tank = tank
         self.pos = Vector(x, y)
         self.vel = vel
+        self.radius = radius
         self.angle = self.tank.cannon_angle + math.pi
         self.bounces_left = 3
         self.sprite = simplegui.load_image(
@@ -401,15 +432,30 @@ class Projectile:
                           self.angle  # rotation
                           )
 
-    def collide(self, normal):  # if hitting a wall then bounce
+    def collide_wall(self, wall):  # if hitting a wall then bounce
+        normal = wall.normal
         self.vel.reflect(normal)
         print(self.vel.angle(normal))
         if abs(self.vel.angle(normal)) > math.pi:
             self.vel = Vector(0, 0)
             print(self.vel.angle(normal))
 
-    def hit(self, tank):  # if hitting a tank then damage it
-        tank.damage()
+    def collide_obstacle(self, obstacle):
+        obstacle_pos = Vector(obstacle.obs_centre[0], obstacle.obs_centre[1])
+        normal = self.pos.copy().subtract(obstacle_pos).normalize()
+        self.vel.reflect(normal)
+        if abs(self.vel.angle(normal)) > math.pi:
+            self.vel = Vector(0, 0)
+
+    def collide_projectile(self, projectile):
+        normal = self.pos.copy().subtract(projectile.pos).normalize()
+        self.vel.reflect(normal)
+        if abs(self.vel.angle(normal)) > math.pi:
+            self.vel = Vector(0, 0)
+
+    def destroy(self):
+        ITEMS.remove(self)
+        del self
 
     def update(self):
         self.pos.add(self.vel)
@@ -417,6 +463,12 @@ class Projectile:
         for item in ITEMS:  # first check for collisions with tanks and projectiles
             item.check_collision(self)
         gamemap.check_collision(self)  # then check for collisions with walls and obstacles
+
+    def check_collision(self, item):
+        if item == self or item == self.tank:
+            return
+        if item.pos.copy().subtract(self.pos).length() < self.radius:
+            item.collide_projectile(self)
 
 
 def draw_handler(canvas):
@@ -453,10 +505,18 @@ ITEMS = []
 kbd = Keyboard()
 gamemap, enemies = new_round()
 menu = Menu(kbd)
-player = PlayerTank(30, 30, 3, 1, 1, kbd)
-for enemy in enemies:
-    ITEMS.append(enemy)
+player_spawn = gamemap.gen_spawn_t1()
+player = PlayerTank(player_spawn[0], player_spawn[1], 3, 1 , 1, kbd)
 ITEMS.append(player)
+
+num_of_enemy = 2
+for enemy in range(num_of_enemy):
+    enemy_spawn = gamemap.gen_spawn_t2()
+    enemy = EnemyTank(enemy_spawn[0], enemy_spawn[1], 1, 1, 1)
+    ITEMS.append(enemy)
+
+
+
 
 frame = simplegui.create_frame("Tanks", CANVAS_WIDTH, CANVAS_HEIGHT)
 frame.set_draw_handler(draw_handler)
