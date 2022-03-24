@@ -242,6 +242,10 @@ class Tank:
         self.pos.x = self.limit_input(wall_size, CANVAS_WIDTH-wall_size, self.pos.x)
         self.pos.y = self.limit_input(wall_size, CANVAS_HEIGHT-wall_size, self.pos.y)
 
+    def collide_projectile(self, projectile):
+        self.damage()
+        projectile.destroy()
+
     def check_collision(self, item):
         """
         function to check for collision with tanks and projectiles
@@ -341,10 +345,11 @@ class EnemyTank(Tank):
 
 
 class Projectile:
-    def __init__(self, x, y, tank, vel):
+    def __init__(self, x, y, tank, vel, radius = 4):
         self.tank = tank
         self.pos = Vector(x, y)
         self.vel = vel
+        self.radius = radius
         self.angle = self.tank.cannon_angle + math.pi
         self.bounces_left = 3
         self.sprite = simplegui.load_image(
@@ -360,16 +365,30 @@ class Projectile:
                           self.angle  # rotation
                           )
 
-    def collide(self, normal):  # if hitting a wall then bounce
+    def collide_wall(self, wall):  # if hitting a wall then bounce
+        normal = wall.normal
         self.vel.reflect(normal)
         print(self.vel.angle(normal))
         if abs(self.vel.angle(normal)) > math.pi:
             self.vel = Vector(0, 0)
             print(self.vel.angle(normal))
 
+    def collide_obstacle(self, obstacle):
+        obstacle_pos = Vector(obstacle.obs_centre[0], obstacle.obs_centre[1])
+        normal = self.pos.copy().subtract(obstacle_pos).normalize()
+        self.vel.reflect(normal)
+        if abs(self.vel.angle(normal)) > math.pi:
+            self.vel = Vector(0, 0)
 
-    def hit(self, tank):  # if hitting a tank then damage it
-        tank.damage()
+    def collide_projectile(self, projectile):
+        normal = self.pos.copy().subtract(projectile.pos).normalize()
+        self.vel.reflect(normal)
+        if abs(self.vel.angle(normal)) > math.pi:
+            self.vel = Vector(0, 0)
+
+    def destroy(self):
+        ITEMS.remove(self)
+        del self
 
     def update(self):
         self.pos.add(self.vel)
@@ -377,6 +396,12 @@ class Projectile:
         for item in ITEMS:      #first check for collisions with tanks and projectiles
             item.check_collision(self)
         gamemap.check_collision(self)   #then check for collisions with walls and obstacles
+
+    def check_collision(self, item):
+        if item == self or item == self.tank:
+            return
+        if item.pos.copy().subtract(self.pos).length() < self.radius:
+            item.collide_projectile(self)
 
 
 def draw_handler(canvas):
@@ -402,7 +427,7 @@ kbd = Keyboard()
 gamemap = map.create_gamemap()
 menu = Menu(kbd)
 player_spawn = gamemap.gen_spawn_t1()
-player = PlayerTank(player_spawn[0], player_spawn[1], 3, 1, 1, kbd)
+player = PlayerTank(player_spawn[0], player_spawn[1], 3, 1 , 1, kbd)
 ITEMS.append(player)
 
 num_of_enemy = 2
