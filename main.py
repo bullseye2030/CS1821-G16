@@ -13,10 +13,12 @@ CANVAS_WIDTH = 768  # 48*16
 CANVAS_HEIGHT = 576  # 48*12
 
 frame_number = 0
+wait_frames = 60*3  # used for waiting at the start of a round
 
-items = []
 difficulty = 0
 round_number = 0
+enemies_left_this_round = 0
+lives = 3
 
 
 class Menu:
@@ -209,20 +211,18 @@ class Tank:
 
     def limit_pos(self, obs_pos, obs_size):
         """
-        limits position by checking if tanks velocity will carry it into the restricted region (hitbox)
+        limits position by checking if tanks velocity will carry it into the restricted region (hit box)
         returns velocity as a vector
         :param obs_pos: Vector position of obstacle
         :param obs_size:   size of obstacle
         :return: Velocity as a vector
         """
-        x_lower_lim = obs_pos.x - obs_size  # calculates the start of the hitbox region on the x axis
-        x_upper_lim = obs_pos.x + obs_size  # calculates the end of the hitbox region on the x axis
+        x_lower_lim = obs_pos.x - obs_size  # calculates the start of the hit box region on the x axis
+        x_upper_lim = obs_pos.x + obs_size  # calculates the end of the hit box region on the x axis
         y_lower_lim = obs_pos.y - obs_size
         y_upper_lim = obs_pos.y + obs_size
         next_pos_x = self.pos.x + self.vel.x
         next_pos_y = self.pos.y + self.vel.y
-        temp_vel_x = 0
-        temp_vel_y = 0
         if x_lower_lim < next_pos_x < x_upper_lim and y_lower_lim < next_pos_y < y_upper_lim:
             return Vector(0, 0)
         else:
@@ -231,6 +231,7 @@ class Tank:
     def collide_obstacle(self, obstacle):
         self.vel = self.limit_pos(Vector(obstacle.obs_centre[0], obstacle.obs_centre[1]), obstacle.obs_dims[0])
 
+    # noinspection PyMethodMayBeStatic
     def limit_input(self, minimum, maximum, num):
         if num < minimum:
             return minimum
@@ -266,7 +267,7 @@ class Tank:
         # code for checking collisions
         for item in ITEMS:  # first check for collisions with tanks and projectiles
             item.check_collision(self)
-        gamemap.check_collision(self)  # then check for collisions with walls and obstacles
+        game_map.check_collision(self)  # then check for collisions with walls and obstacles
 
 
 class PlayerTank(Tank):
@@ -315,6 +316,11 @@ class PlayerTank(Tank):
                 ITEMS.append(proj)
                 self.frames_til_next_fire = 120
 
+    def damage(self):  # reduce global lives by 1 as well as Tank's lives
+        global lives
+        lives -= 1
+        super()
+
     def update(self):
         self.pos.add(self.vel)
         if self.frames_til_next_fire > 0:
@@ -326,7 +332,7 @@ class PlayerTank(Tank):
             if item == self:
                 continue
             item.check_collision(self)
-        gamemap.check_collision(self)  # then check for collisions with walls and obstacles
+        game_map.check_collision(self)  # then check for collisions with walls and obstacles
 
 
 class EnemyTank(Tank):
@@ -400,6 +406,7 @@ class EnemyTank(Tank):
             self.frames_left_for_move = 0
             self.movement = ""
             # See if cannon is pointing at player (if cannon angle is correct)
+
             # if not:
             #   Move cannon towards player
             # else:
@@ -407,7 +414,12 @@ class EnemyTank(Tank):
             #       Fire at player
 
     def update(self):
+        global ITEMS, enemies_left_this_round
         self.make_move()
+        if self.destroyed:
+            enemies_left_this_round -= 1
+            ITEMS.remove(self)
+            del self
 
 
 class Projectile:
@@ -415,6 +427,7 @@ class Projectile:
         self.tank = tank
         self.pos = Vector(x, y)
         self.vel = vel
+        self.old_vel = Vector()
         self.radius = radius
         self.angle = self.tank.cannon_angle + math.pi
         self.bounces_left = 3
@@ -432,25 +445,27 @@ class Projectile:
                           )
 
     def collide_wall(self, wall):  # if hitting a wall then bounce
+        self.bounces_left -= 1
         normal = wall.normal
+        self.old_vel = self.vel.copy()
         self.vel.reflect(normal)
-        print(self.vel.angle(normal))
         if abs(self.vel.angle(normal)) > math.pi:
             self.vel = Vector(0, 0)
-            print(self.vel.angle(normal))
+        self.angle = self.angle - self.vel.angle(self.old_vel)
 
     def collide_obstacle(self, obstacle):
+        self.bounces_left -= 1
         obstacle_pos = Vector(obstacle.obs_centre[0], obstacle.obs_centre[1])
         normal = self.pos.copy().subtract(obstacle_pos).normalize()
+        self.old_vel = self.vel.copy()
         self.vel.reflect(normal)
         if abs(self.vel.angle(normal)) > math.pi:
             self.vel = Vector(0, 0)
+        self.angle = self.angle - self.vel.angle(self.old_vel)
 
     def collide_projectile(self, projectile):
-        normal = self.pos.copy().subtract(projectile.pos).normalize()
-        self.vel.reflect(normal)
-        if abs(self.vel.angle(normal)) > math.pi:
-            self.vel = Vector(0, 0)
+        self.destroy()
+        projectile.destroy()
 
     def destroy(self):
         ITEMS.remove(self)
@@ -461,7 +476,11 @@ class Projectile:
         # code for checking collisions
         for item in ITEMS:  # first check for collisions with tanks and projectiles
             item.check_collision(self)
-        gamemap.check_collision(self)  # then check for collisions with walls and obstacles
+            if self.bounces_left < 1:
+                self.destroy()
+        game_map.check_collision(self)  # then check for collisions with walls and obstacles
+        if self.bounces_left < 1:
+            self.destroy()
 
     def check_collision(self, item):
         if item == self or item == self.tank:
@@ -471,48 +490,50 @@ class Projectile:
 
 
 def draw_handler(canvas):
-    global frame_number
+    global frame_number, game_map, enemies_left_this_round, wait_frames
     frame_number += 1
     if frame_number > 600:
         frame_number = 1
     if menu.show or player.destroyed:
         menu.draw(canvas)
     else:
-        gamemap.draw(canvas)
+        if enemies_left_this_round == 0:
+            game_map = new_round()
+            wait_frames = 60*3
+        game_map.draw(canvas)
         for item in ITEMS:
             try:
-                item.update()
+                if wait_frames == 0:
+                    item.update()
+                else:
+                    wait_frames -= 1
                 item.draw(canvas)
             except AttributeError as e:
                 print(e)
 
 
 def new_round():
-    global round_number, difficulty
-    enemies = []
-    gamemap = map.create_gamemap()
-    no_tanks_to_spawn = min(max(1, (round_number // 2)), 8)
-    for i in range(no_tanks_to_spawn):
-        # find a location that is valid to spawn
-        x, y = 0, 0
-        enemies.append(EnemyTank(x, y, 1, 1, 1))
-    return gamemap, enemies
+    global round_number, difficulty, ITEMS, enemies_left_this_round, player
+    if ITEMS:  # first round has no items yet
+        ITEMS = []
+    new_map = map.create_gamemap()
+    enemies_left_this_round = min(max(1, (round_number // 2)+1), 8)
+    for _ in range(enemies_left_this_round):
+        enemy_spawn = new_map.gen_spawn_t2()
+        enemy = EnemyTank(enemy_spawn[0], enemy_spawn[1], 1, 1, 1)
+        ITEMS.append(enemy)
+    player_spawn = new_map.gen_spawn_t1()
+    player = PlayerTank(player_spawn[0], player_spawn[1], lives, 1, 1, kbd)
+    ITEMS.append(player)
+    return new_map
 
 
 ITEMS = []
 
 kbd = Keyboard()
-gamemap, enemies = new_round()
 menu = Menu(kbd)
-player_spawn = gamemap.gen_spawn_t1()
-player = PlayerTank(player_spawn[0], player_spawn[1], 3, 1, 1, kbd)
-ITEMS.append(player)
-
-num_of_enemy = 2
-for _ in range(num_of_enemy):
-    enemy_spawn = gamemap.gen_spawn_t2()
-    enemy = EnemyTank(enemy_spawn[0], enemy_spawn[1], 1, 1, 1)
-    ITEMS.append(enemy)
+player = PlayerTank(0, 0, lives, 1, 1, kbd)  # initialising player at 0, 0 (gets overwritten when first round is genned)
+game_map = new_round()
 
 frame = simplegui.create_frame("Tanks", CANVAS_WIDTH, CANVAS_HEIGHT)
 frame.set_draw_handler(draw_handler)
