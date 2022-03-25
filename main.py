@@ -13,7 +13,7 @@ CANVAS_WIDTH = 768  # 48*16
 CANVAS_HEIGHT = 576  # 48*12
 
 frame_number = 0
-wait_frames = 60*3  # used for waiting at the start of a round
+wait_frames = 60 * 3  # used for waiting at the start of a round
 
 difficulty = 0
 round_number = 0
@@ -315,7 +315,7 @@ class PlayerTank(Tank):
                 proj = Projectile(proj_x, proj_y, self, proj_vel)
                 # noinspection PyTypeChecker
                 ITEMS.append(proj)
-                self.frames_til_next_fire = 120
+                self.frames_til_next_fire = 120 * self.fire_rate
 
     def damage(self):  # reduce global lives by 1 as well as Tank's lives
         global lives
@@ -335,19 +335,25 @@ class PlayerTank(Tank):
             item.check_collision(self)
         game_map.check_collision(self)  # then check for collisions with walls and obstacles
 
+
 def is_counter_clockwise(a, b, c):
     return (c.y - a.y) * (b.x - a.x) > (b.y - a.y) * (c.x - a.x)
 
+
 # Return true if line segments AB and CD intersect
 def intersect(a, b, c, d):
-    return is_counter_clockwise(a, c, d) != is_counter_clockwise(b, c, d) and is_counter_clockwise(a, b, c) != is_counter_clockwise(a, b, d)
+    return is_counter_clockwise(a, c, d) != is_counter_clockwise(b, c, d) and is_counter_clockwise(a, b,
+                                                                                                   c) != is_counter_clockwise(
+        a, b, d)
+
 
 def calculate_lines(obs_centre, obs_size):
-    top = Vector(obs_centre[0] - obs_size, obs_centre[1]-obs_size)
-    right = Vector(obs_centre[0] + obs_size, obs_centre[1]-obs_size)
-    bottom = Vector(obs_centre[0] + obs_size, obs_centre[1]+obs_size)
-    left = Vector(obs_centre[0]-obs_size, obs_centre[1]+obs_size)
+    top = Vector(obs_centre[0] - obs_size, obs_centre[1] - obs_size)
+    right = Vector(obs_centre[0] + obs_size, obs_centre[1] - obs_size)
+    bottom = Vector(obs_centre[0] + obs_size, obs_centre[1] + obs_size)
+    left = Vector(obs_centre[0] - obs_size, obs_centre[1] + obs_size)
     return [(top, right), (right, bottom), (bottom, left), (left, top)]
+
 
 class EnemyTank(Tank):
     def __init__(self, x, y, health, fire_rate, speed):
@@ -428,7 +434,6 @@ class EnemyTank(Tank):
             self.movement = ""
             # See if cannon is pointing at player (if cannon angle is correct)
 
-
             # if not:
             #   Move cannon towards player
             # else:
@@ -447,7 +452,6 @@ class EnemyTank(Tank):
             enemies_left_this_round -= 1
             ITEMS.remove(self)
             del self
-
 
 
 class Projectile:
@@ -472,7 +476,6 @@ class Projectile:
                           (self.dims[0], self.dims[1]),  # width_height_dest
                           self.angle  # rotation
                           )
-
 
     def collide_wall(self, wall):  # if hitting a wall then bounce
         self.bounces_left -= 1
@@ -515,13 +518,13 @@ class Projectile:
     def collide(self, ball1, ball2):
         normal = ball1.pos.copy().subtract(ball2.pos).normalize()
 
-        v1_x = ball1.vel.get_proj(normal)   #calculate velocity of ball 1 in x axis
-        v1_y = ball1.vel.copy().subtract(v1_x)  #calculate velocity of ball 1 in y axis
+        v1_x = ball1.vel.get_proj(normal)  # calculate velocity of ball 1 in x axis
+        v1_y = ball1.vel.copy().subtract(v1_x)  # calculate velocity of ball 1 in y axis
 
-        v2_x = ball2.vel.get_proj(normal)   #calculate velocity of ball 2 in x axis
-        v2_y = ball2.vel.copy().subtract(v2_x)  #calculate velocity of ball 2 in y axis
+        v2_x = ball2.vel.get_proj(normal)  # calculate velocity of ball 2 in x axis
+        v2_y = ball2.vel.copy().subtract(v2_x)  # calculate velocity of ball 2 in y axis
 
-        ball1.vel = v2_x + v1_y     #calculate new velocities
+        ball1.vel = v2_x + v1_y  # calculate new velocities
         ball2.vel = v1_x + v2_y
 
     def collide_obstacle(self, obstacle):
@@ -533,7 +536,7 @@ class Projectile:
 
         self.collide(obstacle, self)
 
-        #self.angle = self.angle - self.vel.angle(self.old_vel)
+        # self.angle = self.angle - self.vel.angle(self.old_vel)
 
     def collide_projectile(self, projectile):
         self.destroy()
@@ -571,7 +574,7 @@ def draw_handler(canvas):
     else:
         if enemies_left_this_round == 0:
             game_map = new_round()
-            wait_frames = 60*3
+            wait_frames = 60 * 3
         game_map.draw(canvas)
         for item in ITEMS:
             try:
@@ -588,14 +591,18 @@ def new_round():
     global round_number, difficulty, ITEMS, enemies_left_this_round, player
     if ITEMS:  # first round has no items yet
         ITEMS = []
+    player_move_speed = {1: 1.0, 2: 1.15, 3: 1.3}.get(difficulty, 1)
+    player_reload_time_multiplier = {1: 1.0, 2: 0.9, 3: 0.8}.get(difficulty, 1)
+    enemy_move_speed = {1: 1.0, 2: 1.2, 3: 1.5}.get(difficulty, 1)
+    enemy_reload_time_multiplier = {1: 1.0, 2: 0.8, 3: 0.6}.get(difficulty, 1)
     new_map = map.create_gamemap()
-    enemies_left_this_round = min(max(1, (round_number // 2)+1), 8)
+    enemies_left_this_round = min(max(1, (round_number // 2) + 1), 8)
     for _ in range(enemies_left_this_round):
         enemy_spawn = new_map.gen_spawn_t2()
-        enemy = EnemyTank(enemy_spawn[0], enemy_spawn[1], 1, 1, 1)
+        enemy = EnemyTank(enemy_spawn[0], enemy_spawn[1], 1, enemy_reload_time_multiplier, enemy_move_speed)
         ITEMS.append(enemy)
     player_spawn = new_map.gen_spawn_t1()
-    player = PlayerTank(player_spawn[0], player_spawn[1], lives, 1, 1, kbd)
+    player = PlayerTank(player_spawn[0], player_spawn[1], lives, player_reload_time_multiplier, player_move_speed, kbd)
     ITEMS.append(player)
     return new_map
 
@@ -604,7 +611,7 @@ ITEMS = []
 
 kbd = Keyboard()
 menu = Menu(kbd)
-player = PlayerTank(0, 0, lives, 1, 1, kbd)  # initialising player at 0, 0 (gets overwritten when first round is genned)
+player = PlayerTank(0, 0, 1, 1, 1, kbd)  # initialising player (gets overwritten when first round is genned)
 game_map = new_round()
 
 frame = simplegui.create_frame("Tanks", CANVAS_WIDTH, CANVAS_HEIGHT)
