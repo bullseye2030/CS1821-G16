@@ -124,7 +124,7 @@ class Keyboard:
 
 
 class Tank:
-    def __init__(self, x, y, health, fire_rate, speed, tank_radius=4):
+    def __init__(self, x, y, health, fire_rate, speed, radius=6):
         self.pos = Vector(x, y)
         self.vel = Vector()
         self.cannon_angle = 0.0  # Default angle from normal - starts cannon pointing left
@@ -134,8 +134,9 @@ class Tank:
         self.health = health  # Health value - default range 3-0 for player tank (2 and 1 for damaged, 0 for destroyed)
         self.fire_rate = fire_rate  # Fire rate - default 1 (fires once a second) - can do draw_number % (60/fire_rate)
         self.speed = speed  # Speed value - default 1
-        self.tank_radius = tank_radius
+        self.radius = radius
         self.destroyed = False
+        self.in_collision = False
         self.sprites = self.get_sprites()
         self.dims = []
         self.frames_til_next_fire = 0
@@ -257,7 +258,7 @@ class Tank:
         """
         if item == self or not type(item) == Tank:
             return
-        if item.pos.copy().subtract(self.pos).length() < self.tank_radius:
+        if item.pos.copy().subtract(self.pos).length() < self.radius:
             item.collide(self)
 
     def update(self):
@@ -423,7 +424,7 @@ class EnemyTank(Tank):
 
 
 class Projectile:
-    def __init__(self, x, y, tank, vel, radius=4):
+    def __init__(self, x, y, tank, vel, radius=2):
         self.tank = tank
         self.pos = Vector(x, y)
         self.vel = vel
@@ -434,6 +435,7 @@ class Projectile:
         self.sprite = simplegui.load_image(
             "https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/projectile.png?raw=true")
         self.dims = (self.sprite.get_width(), self.sprite.get_height())
+        self.in_collision = False
 
     def draw(self, canvas):
         canvas.draw_image(self.sprite,  # image,
@@ -444,6 +446,36 @@ class Projectile:
                           self.angle  # rotation
                           )
 
+    def calculate_obstacle_normal(self, obs_pos):
+        temp_vector = self.pos.copy().subtract(obs_pos).normalize()
+        angle = Vector(-1, 1).angle(temp_vector)
+        print(angle)
+        if angle <= math.pi / 2:
+            return Vector(0, 1)
+        elif angle >= math.pi / 2 and angle < math.pi:
+            return Vector(1, 0)
+        elif angle >= math.pi and angle < (3 * math.pi )/ 2:
+            return Vector(0, -1)
+        else:
+            return Vector(-1, 0)
+
+    def calculate_obstacle_normal(self, obs_pos):
+        top_right_vec = Vector(-1, 1)
+        temp_vector = self.pos.copy().subtract(obs_pos).normalize()
+        dot = top_right_vec.x*temp_vector.x + top_right_vec.y*temp_vector.y
+        det = top_right_vec.x*temp_vector.y - top_right_vec.y*temp_vector.x
+        angle = math.atan2(det, dot)
+        print(angle)
+        if angle <= math.pi / 2:
+            return Vector(0, 1)
+        elif angle >= math.pi / 2 and angle < math.pi:
+            return Vector(1, 0)
+        elif angle >= math.pi and angle < (3 * math.pi )/ 2:
+            return Vector(0, -1)
+        else:
+            return Vector(-1, 0)
+
+
     def collide_wall(self, wall):  # if hitting a wall then bounce
         self.bounces_left -= 1
         normal = wall.normal
@@ -452,6 +484,35 @@ class Projectile:
         if abs(self.vel.angle(normal)) > math.pi:
             self.vel = Vector(0, 0)
         self.angle = self.angle - self.vel.angle(self.old_vel)
+
+    def exclude_input(self, start_range, end_range, input_num):
+        if input_num > start_range:
+            return start_range
+        elif input_num < end_range:
+            return end_range
+        else:
+            return input_num
+
+    def check_vel(self, obs_pos, obs_size):
+        """
+        limits position by checking if tanks velocity will carry it into the restricted region (hitbox)
+        returns velocity as a vector
+        :param obs_pos: Vector position of obstacle
+        :param obs_size:   size of obstacle
+        :return: Velocity as a vector
+        """
+        x_lower_lim = obs_pos.x - obs_size  # calculates the start of the hitbox region on the x axis
+        x_upper_lim = obs_pos.x + obs_size  # calculates the end of the hitbox region on the x axis
+        y_lower_lim = obs_pos.y - obs_size
+        y_upper_lim = obs_pos.y + obs_size
+        next_pos_x = self.pos.x + self.vel.x
+        next_pos_y = self.pos.y + self.vel.y
+        temp_vel_x = 0
+        temp_vel_y = 0
+        if x_lower_lim < next_pos_x < x_upper_lim and y_lower_lim < next_pos_y < y_upper_lim:
+            return False
+        else:
+            return True
 
     def collide_obstacle(self, obstacle):
         self.bounces_left -= 1
@@ -485,7 +546,7 @@ class Projectile:
     def check_collision(self, item):
         if item == self or item == self.tank:
             return
-        if item.pos.copy().subtract(self.pos).length() < self.radius:
+        if item.pos.copy().subtract(self.pos).length() < self.radius + item.radius:
             item.collide_projectile(self)
 
 

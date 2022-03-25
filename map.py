@@ -102,9 +102,12 @@ class Obstacle:
         :param item:
         :return None:2
         """
-        if abs(item.pos.x - self.obs_centre[0]) < self.obs_dims[0] and abs(item.pos.y - self.obs_centre[1]) < \
-                self.obs_dims[1]:  # check by calculating if position of object is in obstacle
+        if abs(item.pos.x - self.obs_centre[0]) < self.obs_dims[0] + item.radius and abs(item.pos.y - self.obs_centre[1]) < self.obs_dims[1] + item.radius:  # check by calculating if position of object is in obstacle
             item.collide_obstacle(self)
+        if not abs(item.pos.x - self.obs_centre[0]) < self.obs_dims[0] and abs(item.pos.y - self.obs_centre[1]) < self.obs_dims[1] and item.in_collision == True:
+            item.in_collision = False
+        #if abs(self.obs_centre[0] - item.pos.x) < self.obs_dims[0] and abs(self.obs_centre[1] - item.pos.y) < self.obs_dims[1]:  # check by calculating if position of object is in obstacle
+        #    item.collide_obstacle(self)
 
 
 class FloorTile:
@@ -365,11 +368,7 @@ class Map:
 
 
 def create_gamemap():
-    l = Wall(0, 0, BORDER_THICKNESS, BORDER_COLOUR, 'l')  # define walls and pass as initial items to draw
-    r = Wall(0, CANVAS_WIDTH, BORDER_THICKNESS, BORDER_COLOUR, 'r')
-    t = Wall(0, 0, BORDER_THICKNESS, BORDER_COLOUR, 't')
-    b = Wall(0, CANVAS_HEIGHT, BORDER_THICKNESS, BORDER_COLOUR, 'b')
-    gamemap = Map(GRID_START_COORDS, GRID_DIMS, 32, 24, 100)
+    gamemap = Map(GRID_START_COORDS, GRID_DIMS, 32, 24, 80)
     return gamemap
 
 # frame = simplegui.create_frame("TANKS!", CANVAS_WIDTH, CANVAS_HEIGHT)
