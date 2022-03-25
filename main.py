@@ -427,18 +427,33 @@ class EnemyTank(Tank):
                     5: "move_tank_backward",
                     **dict.fromkeys([6, 7, 8, 9, 10, 11], "do_nothing")  # 6 to 11 are "do_nothing"
                 }.get(choice)
-                self.frames_left_for_move = random.randint(30, 300)  # all moves run for 0.5 - 5 seconds
+                self.frames_left_for_move = random.randint(30, 120)  # all moves run for 0.5 - 2 seconds
         else:
             # Stop movements
             self.frames_left_for_move = 0
             self.movement = ""
             # See if cannon is pointing at player (if cannon angle is correct)
-
-            # if not:
-            #   Move cannon towards player
-            # else:
-            #   if enemy can fire:
-            #       Fire at player
+            angle_to_player = 0
+            # If angle isn't correct, step towards the right angle for this frame
+            if self.cannon_angle != angle_to_player:
+                if angle_to_player > self.cannon_angle:
+                    self.cannon_angle += 0.04
+                if angle_to_player < self.cannon_angle:
+                    self.cannon_angle -= 0.04
+                # If the difference between the two is less than the standard step
+                if -0.04 < self.cannon_angle - angle_to_player < 0.04:
+                    self.cannon_angle = angle_to_player
+            else:
+                if self.frames_til_next_fire == 0:
+                    spawn_point = self.pos.copy()
+                    spawn_point.add(Vector(self.dims[1][1] / 2, 0).rotate_rad(self.cannon_angle + (math.pi / 2)))
+                    proj_x, proj_y = spawn_point.get_p()
+                    proj_vel = Vector(3, 0).rotate_rad(self.cannon_angle + (math.pi / 2)) \
+                        .add(Vector(self.vel.length(), 0).rotate_rad(self.cannon_angle + (math.pi / 2)))
+                    proj = Projectile(proj_x, proj_y, self, proj_vel)
+                    # noinspection PyTypeChecker
+                    ITEMS.append(proj)
+                    self.frames_til_next_fire = 120 * self.fire_rate
 
     def update(self):
         global ITEMS, enemies_left_this_round
@@ -591,6 +606,7 @@ def new_round():
     global round_number, difficulty, ITEMS, enemies_left_this_round, player
     if ITEMS:  # first round has no items yet
         ITEMS = []
+    round_number += 1
     player_move_speed = {1: 1.0, 2: 1.15, 3: 1.3}.get(difficulty, 1)
     player_reload_time_multiplier = {1: 1.0, 2: 0.9, 3: 0.8}.get(difficulty, 1)
     enemy_move_speed = {1: 1.0, 2: 1.2, 3: 1.5}.get(difficulty, 1)
