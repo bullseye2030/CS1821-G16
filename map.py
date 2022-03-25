@@ -91,6 +91,8 @@ class Obstacle:
         self.image_dims = image_dims
         self.obs_centre = obs_centre
         self.obs_dims = obs_dims
+        self.pos = Vector(0, 0)
+        self.vel = Vector(0, 0)
 
     def draw(self, canvas):
         canvas.draw_image(self.image, self.image_centre, self.image_dims, self.obs_centre, self.obs_dims)
@@ -346,7 +348,7 @@ class Map:
         spawn_x = 1
         spawn_y = 1
         while not valid_spawn:
-            spawn_x = randint(self.rows / 2 - 5, self.rows)  # spawn on left side of the map
+            spawn_x = randint(self.rows / 2 - 5, self.rows-5)  # spawn on left side of the map
             spawn_y = randint(2, self.columns - 5)
             if self.heatmap[spawn_x][spawn_y] == 1: #if there is an obstacle there
                 continue    #dont use this spawn and try again

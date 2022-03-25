@@ -124,7 +124,7 @@ class Keyboard:
 
 
 class Tank:
-    def __init__(self, x, y, health, fire_rate, speed, radius=6):
+    def __init__(self, x, y, health, fire_rate, speed, radius=10):
         self.pos = Vector(x, y)
         self.vel = Vector()
         self.cannon_angle = 0.0  # Default angle from normal - starts cannon pointing left
@@ -335,6 +335,19 @@ class PlayerTank(Tank):
             item.check_collision(self)
         game_map.check_collision(self)  # then check for collisions with walls and obstacles
 
+def is_counter_clockwise(a, b, c):
+    return (c.y - a.y) * (b.x - a.x) > (b.y - a.y) * (c.x - a.x)
+
+# Return true if line segments AB and CD intersect
+def intersect(a, b, c, d):
+    return is_counter_clockwise(a, c, d) != is_counter_clockwise(b, c, d) and is_counter_clockwise(a, b, c) != is_counter_clockwise(a, b, d)
+
+def calculate_lines(obs_centre, obs_size):
+    top = Vector(obs_centre[0] - obs_size, obs_centre[1]-obs_size)
+    right = Vector(obs_centre[0] + obs_size, obs_centre[1]-obs_size)
+    bottom = Vector(obs_centre[0] + obs_size, obs_centre[1]+obs_size)
+    left = Vector(obs_centre[0]-obs_size, obs_centre[1]+obs_size)
+    return [(top, right), (right, bottom), (bottom, left), (left, top)]
 
 class EnemyTank(Tank):
     def __init__(self, x, y, health, fire_rate, speed):
@@ -354,9 +367,16 @@ class EnemyTank(Tank):
         # if no line of sight, move cannon left or right for x frames, and then decide next move
         # if line of sight from cannon crosses tank, try to fire at the tank and keep tracking the tank
         # decide if the tank also wants to move, for how many frames, and in which direction
-        line_of_sight = False
+        line_of_sight = True
 
         # check line of sight here
+        for obstacle in game_map.obstacles:
+            box_lines = calculate_lines(obstacle.obs_centre, obstacle.obs_dims[0])
+            for line in box_lines:
+                if intersect(line[0], line[1], self.pos, player.pos):
+                    line_of_sight = False
+                    print("No LOS")
+                    break
 
         if not line_of_sight:
             if self.movement and self.frames_left_for_move > 0:
@@ -408,6 +428,7 @@ class EnemyTank(Tank):
             self.movement = ""
             # See if cannon is pointing at player (if cannon angle is correct)
 
+
             # if not:
             #   Move cannon towards player
             # else:
@@ -417,10 +438,16 @@ class EnemyTank(Tank):
     def update(self):
         global ITEMS, enemies_left_this_round
         self.make_move()
+        for item in ITEMS:  # first check for collisions with tanks and projectiles
+            if item == self:
+                continue
+            item.check_collision(self)
+        game_map.check_collision(self)  # then check for collisions with walls and obstacles
         if self.destroyed:
             enemies_left_this_round -= 1
             ITEMS.remove(self)
             del self
+
 
 
 class Projectile:
@@ -431,7 +458,7 @@ class Projectile:
         self.old_vel = Vector()
         self.radius = radius
         self.angle = self.tank.cannon_angle + math.pi
-        self.bounces_left = 3
+        self.bounces_left = 5
         self.sprite = simplegui.load_image(
             "https://github.com/bullseye2030/CS1821-G16/blob/main/sprites/projectile.png?raw=true")
         self.dims = (self.sprite.get_width(), self.sprite.get_height())
@@ -445,35 +472,6 @@ class Projectile:
                           (self.dims[0], self.dims[1]),  # width_height_dest
                           self.angle  # rotation
                           )
-
-    def calculate_obstacle_normal(self, obs_pos):
-        temp_vector = self.pos.copy().subtract(obs_pos).normalize()
-        angle = Vector(-1, 1).angle(temp_vector)
-        print(angle)
-        if angle <= math.pi / 2:
-            return Vector(0, 1)
-        elif angle >= math.pi / 2 and angle < math.pi:
-            return Vector(1, 0)
-        elif angle >= math.pi and angle < (3 * math.pi )/ 2:
-            return Vector(0, -1)
-        else:
-            return Vector(-1, 0)
-
-    def calculate_obstacle_normal(self, obs_pos):
-        top_right_vec = Vector(-1, 1)
-        temp_vector = self.pos.copy().subtract(obs_pos).normalize()
-        dot = top_right_vec.x*temp_vector.x + top_right_vec.y*temp_vector.y
-        det = top_right_vec.x*temp_vector.y - top_right_vec.y*temp_vector.x
-        angle = math.atan2(det, dot)
-        print(angle)
-        if angle <= math.pi / 2:
-            return Vector(0, 1)
-        elif angle >= math.pi / 2 and angle < math.pi:
-            return Vector(1, 0)
-        elif angle >= math.pi and angle < (3 * math.pi )/ 2:
-            return Vector(0, -1)
-        else:
-            return Vector(-1, 0)
 
 
     def collide_wall(self, wall):  # if hitting a wall then bounce
@@ -514,15 +512,28 @@ class Projectile:
         else:
             return True
 
+    def collide(self, ball1, ball2):
+        normal = ball1.pos.copy().subtract(ball2.pos).normalize()
+
+        v1_x = ball1.vel.get_proj(normal)   #calculate velocity of ball 1 in x axis
+        v1_y = ball1.vel.copy().subtract(v1_x)  #calculate velocity of ball 1 in y axis
+
+        v2_x = ball2.vel.get_proj(normal)   #calculate velocity of ball 2 in x axis
+        v2_y = ball2.vel.copy().subtract(v2_x)  #calculate velocity of ball 2 in y axis
+
+        ball1.vel = v2_x + v1_y     #calculate new velocities
+        ball2.vel = v1_x + v2_y
+
     def collide_obstacle(self, obstacle):
         self.bounces_left -= 1
         obstacle_pos = Vector(obstacle.obs_centre[0], obstacle.obs_centre[1])
         normal = self.pos.copy().subtract(obstacle_pos).normalize()
         self.old_vel = self.vel.copy()
         self.vel.reflect(normal)
-        if abs(self.vel.angle(normal)) > math.pi:
-            self.vel = Vector(0, 0)
-        self.angle = self.angle - self.vel.angle(self.old_vel)
+
+        self.collide(obstacle, self)
+
+        #self.angle = self.angle - self.vel.angle(self.old_vel)
 
     def collide_projectile(self, projectile):
         self.destroy()
